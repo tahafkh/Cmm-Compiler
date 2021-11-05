@@ -37,10 +37,11 @@ expression
 //Tokens
 MAIN: 'main';
 BEGIN: 'begin' NEWLINE+;
-END: 'end' NEWLINE+; // might get ignored
+END: 'end' NEWLINE+;
 RETURN: 'return ';
-NEWLINE: '\n';
 
+
+// Methods
 IF: 'if';
 ELSE: 'else';
 WHILE: 'while';
@@ -48,41 +49,57 @@ DO: 'do';
 GET: 'get';
 SET: 'set';
 
+// Predefined functions
 DISPLAY: 'display';
 APPEND: 'append';
 SIZE: 'size';
-FPTR: 'fptr';
 
-TYPE: 'int' | 'bool';
-TRUE:'true';
-FALSE:'false';
+// Initial types
+PRIMITIVE_TYPE: 'int' | 'bool';
+FPTR: 'fptr';
 STRUCT: 'struct';
 LIST: 'list';
 VOID: 'void';
 
-ARROW: '->';
-
-ARITHMETIC_OP: '+' | '_' | '*' | '/'; // Add '-' for negative values
-EQ_OP: '==' | '>' | '<';
-LOGICAL_OP: '&' | '|' | '~';
-ASSIGN_OP: '='; //check Lvalue for left op
-// Apply priorities
-
-IDENTIFIER: [a-zA-Z_][A-Za-z0-9_]*; // check if they are not keyword (page 5)
-
+// Symbols
 LPAR: '(';
 RPAR: ')';
 LBRACK: '[';
 RBRACK: ']';
 LBRACE: '{';
 RBRACE: '}';
-
 SHARP: '#';
 COMMA: ',';
 DOT: '.';
-SEMICOLLON: ';';
+SEMICOLON: ';';
+ARROW: '->';
+LITERALS: INTEGER | BOOL_VALUE;
 
-INT_VALUE: '0' | [1-9][0-9]*;
+// Operations
+PLUS: '+';
+MINUS: '-';
+MULT: '*';
+DIV: '/';
+EQUAL: '==';
+GREATER_THAN: '>';
+LESS_THAN: '<';
+AND: '&';
+OR: '|';
+NOT: '~';
+ASSIGN: '=';
 
+// Typedefs
+BOOL_VALUE: 'true' | 'false';
+INTEGER: (NONZERODIGIT DIGIT*) | [0];
+IDENTIFIER: (LETTER | UNDERSCORE) (LETTER | UNDERSCORE | DIGIT);
+
+// Helper
+DIGIT: [0-9];
+NONZERODIGIT: [1-9];
+LETTER: [a-zA-Z];
+UNDERSCORE: '_';
+
+// Whitespace and comment
 COMMENT: ('/*' .*? '*/') -> skip;
-WS: ([; \t\n\r]) -> skip;
+WS: ([ \t\r]) -> skip;
+NEWLINE: '\n';
