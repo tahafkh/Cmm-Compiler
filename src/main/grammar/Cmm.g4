@@ -1,6 +1,16 @@
 grammar Cmm;
 
 //Rules
+//TODO
+// Check new line at the beginning of file
+// main
+// function
+// while do while
+// if else
+// fptr
+// expression
+// operator precedence
+
 main
     : MAIN LPAR RPAR func_body //body is like function body
     ;
@@ -29,10 +39,12 @@ short_body
     : expression NEWLINE+
     ;
 
-expression //TODO
+expression
     :( | TYPE)
     IDENTIFIER ASSIGN INTEGER PLUS INTEGER
     ;
+
+//__________________________________________________________________________________________________________
 
 struct_decleration
     : struct_type BEGIN struct_init END
@@ -83,12 +95,14 @@ declare_statement
     NEWLINE
     ;
 
+
+
+
 //Tokens
 MAIN: 'main';
-BEGIN: 'begin' NEWLINE+;
-END: 'end' NEWLINE+;
+BEGIN: 'begin' NEWLINE;
+END: 'end' NEWLINE;
 RETURN: 'return ';
-
 
 // Methods
 IF: 'if';
@@ -124,7 +138,7 @@ SEMICOLON: ';';
 ARROW: '->';
 //LITERALS: INTEGER | BOOL_VALUE;
 
-// Operations
+// Operators
 PLUS: '+';
 MINUS: '-';
 MULT: '*';
@@ -151,4 +165,4 @@ UNDERSCORE: '_';
 // Whitespace and comment
 COMMENT: ('/*' .*? '*/') -> skip;
 WS: ([ \t\r]) -> skip;
-NEWLINE: '\n';
+NEWLINE: '\n'+;
