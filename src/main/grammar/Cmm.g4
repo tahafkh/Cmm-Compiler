@@ -6,14 +6,14 @@ main
     ;
 
 function
-    : TYPE IDENTIFIER LPAR arguments RPAR func_body //Fix return type and check it with void
+    : TYPE IDENTIFIER arguments func_body //Fix return type and check it with void
     ;
 
 //return_type
 //    : TYPE | VOID |
 
 arguments
-    : (TYPE|STRUCT|LIST) IDENTIFIER (COMMA (TYPE|STRUCT|LIST) IDENTIFIER)* // enable chaining
+    : LPAR type IDENTIFIER (COMMA type IDENTIFIER)* RPAR
     ;
 
 func_body
@@ -29,9 +29,58 @@ short_body
     : expression NEWLINE+
     ;
 
-expression
+expression //TODO
     :( | TYPE)
-    IDENTIFIER ASSIGN_OP INT_VALUE ARITHMETIC_OP INT_VALUE
+    IDENTIFIER ASSIGN INTEGER PLUS INTEGER
+    ;
+
+struct_decleration
+    : struct_type BEGIN struct_init END
+    ;
+
+struct_type
+    : STRUCT IDENTIFIER
+    ;
+
+struct_init
+    : (declare_statement | set_get)+
+    ;
+
+set_get
+    : arguments BEGIN setter getter END
+    ;
+
+setter
+    : SET (NEWLINE expression | BEGIN expression+ END)
+    ;
+
+getter
+    : GET (NEWLINE expression | BEGIN expression+ END)
+    ;
+
+list_decleration
+    : LIST SHARP type IDENTIFIER
+    ;
+
+list_type //Can't be initialized
+    : LIST SHARP type
+    ;
+
+type
+    : initable_type | non_initable_type
+    ;
+
+initable_type
+    : PRIMITIVE_TYPE // | fptr
+    ;
+
+non_initable_type
+    : list_type | struct_type
+    ;
+
+declare_statement
+    : ((type IDENTIFIER ( | SEMICOLON )) | (initable_type IDENTIFIER ASSIGN expression))
+    NEWLINE
     ;
 
 //Tokens
@@ -73,7 +122,7 @@ COMMA: ',';
 DOT: '.';
 SEMICOLON: ';';
 ARROW: '->';
-LITERALS: INTEGER | BOOL_VALUE;
+//LITERALS: INTEGER | BOOL_VALUE;
 
 // Operations
 PLUS: '+';
@@ -91,7 +140,7 @@ ASSIGN: '=';
 // Typedefs
 BOOL_VALUE: 'true' | 'false';
 INTEGER: (NONZERODIGIT DIGIT*) | [0];
-IDENTIFIER: (LETTER | UNDERSCORE) (LETTER | UNDERSCORE | DIGIT);
+IDENTIFIER: (LETTER | UNDERSCORE) (LETTER | UNDERSCORE | DIGIT)*;
 
 // Helper
 DIGIT: [0-9];
