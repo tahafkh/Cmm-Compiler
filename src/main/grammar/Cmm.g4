@@ -2,20 +2,33 @@ grammar Cmm;
 
 //Rules
 //TODO
-// Check new line at the beginning of file
-// function
+// Check new line at the beginning of file 100/100?
+// function 100/100?
 // function input handling
-// pre-defined functions
+// pre-defined functions 33/100
 
-cmm: main;
-
-function_scope: (declare_statement)* statement*;
+cmm: NEWLINE* struct_decleration* NEWLINE* function_decleration* NEWLINE* main;
 
 //statements
 statement
     : conditional_statement | loop_statement | function_call_statement
-    | declare_statement | return_statement | short_body
+    | declare_statement | return_statement | expression_statement
+    | display_statement | size_statement | append_statement
     ;
+
+//display statement
+display_statement
+    : DISPLAY {System.out.println("Built-in : display");} LPAR expression RPAR eol
+    ;
+
+//size statement
+size_statement
+    : SIZE {System.out.println("Size");} LPAR IDENTIFIER RPAR eol
+    ;
+
+//append statement
+append_statement
+    : APPEND {System.out.println("Append");} LPAR IDENTIFIER COMMA expression RPAR eol
 
 //conditinal statement
 conditional_statement
@@ -43,30 +56,31 @@ while_loop
     : WHILE condition {System.out.println("Loop : while");} ((BEGIN  statement+ END) | statement)
     ;
 
+//function call statement
+function_call_statement
+    : variable {System.out.println("FunctionCall");} extra_parantheses+ eol
+    ;
+
+//assignments etc.
+expression_statement
+    : expression eol
+    ;
+
 main
     : MAIN LPAR RPAR func_body //body is like function body
     ;
 
-function
-    : TYPE IDENTIFIER arguments func_body //Fix return type and check it with void
+function_decleration
+    : (type | VOID) IDENTIFIER arguments func_body
     ;
 
 arguments
     : LPAR type IDENTIFIER (COMMA type IDENTIFIER)* RPAR
     ;
 
-//function call statement
-function_call_statement
-    : variable {System.out.println("FunctionCall");} extra_parantheses+ eol
-    ;
-
 func_body
     : BEGIN statement+ END
     | NEWLINE statement
-    ;
-
-short_body
-    : expression eol
     ;
 
 expression
