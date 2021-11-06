@@ -7,10 +7,44 @@ grammar Cmm;
 // function
 // while do while
 // if else
-// fptr
-// expression
-// operator precedence
 // function input handling
+// pre-defined functions
+
+cmm: main;
+
+function_scope: (declare_statement)* statement*;
+
+//statements
+statement
+    : conditional_statement | loop_statement | function_call_statement
+    | declare_statement | return_statement | short_body
+    ;
+
+//conditinal statement
+conditional_statement
+    : IF {System.out.println("Conditional : if");} condition BEGIN statement+ END else_statement?
+    ;
+
+condition
+    : (LPAR expression RPAR) | expression
+    ;
+
+else_statement
+    : ELSE BEGIN {System.out.println("Conditional:else");} statement+ END
+    ;
+
+//loop statements
+loop_statement
+    : while_loop | do_while_loop
+    ;
+
+do_while_loop
+    : DO {System.out.println("Loop : do...while");} ((BEGIN  statement+ END) | statement) WHILE condition eol
+    ;
+
+while_loop
+    : WHILE condition {System.out.println("Loop : while");} ((BEGIN  statement+ END) | statement)
+    ;
 
 main
     : MAIN LPAR RPAR func_body //body is like function body
@@ -20,24 +54,22 @@ function
     : TYPE IDENTIFIER arguments func_body //Fix return type and check it with void
     ;
 
-//return_type
-//    : TYPE | VOID |
-
 arguments
     : LPAR type IDENTIFIER (COMMA type IDENTIFIER)* RPAR
     ;
 
-func_body
-    : BEGIN long_body END
-    | NEWLINE+ short_body
+//function call statement
+function_call_statement
+    : variable {System.out.println("FunctionCall");} extra_parantheses+ eol
     ;
 
-long_body
-    : short_body short_body*
+func_body
+    : BEGIN statement+ END
+    | NEWLINE statement
     ;
 
 short_body
-    : expression NEWLINE+
+    : expression eol
     ;
 
 expression
@@ -64,8 +96,20 @@ parameters: (expression (COMMA expression)*)?;
 dot_refrence: DOT (IDENTIFIER | list_refrence) {System.out.println("Operator:.";};
 bracket_indexing: LBRACK expression RBRACK {System.out.println("Operator:[]";};
 
-//__________________________________________________________________________________________________________
+// Fptr:
+fptr_decleration
+    : fptr_type IDENTIFIER (ASSIGN expression | ) eol
+    ;
 
+fptr_type
+    : FPTR LESS_THAN function_type (COMMA function_type)* ARROW function_type GREATER_THAN
+    ;
+
+function_type
+    : type | VOID
+    ;
+
+// Struct:
 struct_decleration
     : struct_type BEGIN struct_init END
     ;
@@ -83,44 +127,54 @@ set_get
     ;
 
 setter
-    : SET ((NEWLINE expression ( | SEMICOLON) NEWLINE) |( BEGIN (expression ( | SEMICOLON) NEWLINE)+ END))
+    : SET ((NEWLINE expression eol) |( BEGIN (expression eol)+ END))
     ;
 
 getter
-    : GET (NEWLINE expression | BEGIN expression+ END)
+    : GET (NEWLINE return_statement | BEGIN expression+ return_statement END)
     ;
 
+
+// List:
 list_decleration
-    : LIST SHARP type IDENTIFIER
+    : list_type IDENTIFIER
     ;
 
 list_type // Can't be initialized
     : LIST SHARP type
     ;
 
+
 type
     : initable_type | non_initable_type
     ;
 
 initable_type
-    : PRIMITIVE_TYPE // | fptr
+    : PRIMITIVE_TYPE | fptr_type
     ;
 
 non_initable_type
     : list_type | struct_type
     ;
 
-declare_statement
-    : ((type IDENTIFIER ( | SEMICOLON )) | (initable_type IDENTIFIER ASSIGN expression))
-    NEWLINE
+declare_statement //update println
+    : ((type IDENTIFIER) | (initable_type IDENTIFIER ASSIGN expression)) eol {System.out.println("VarDec:" + $IDENTIFIER.getText());}
+    ;
+
+return_statement
+    : RETURN expression NEWLINE {System.out.println("Return");}
+    ;
+
+eol
+    : (SEMICOLON NEWLINE* | NEWLINE)
     ;
 
 
 //Tokens
 MAIN: 'main';
-BEGIN: 'begin' NEWLINE;
-END: 'end' NEWLINE;
-RETURN: 'return ';
+BEGIN: 'begin' WS* NEWLINE;
+END: 'end' WS* NEWLINE;
+RETURN: 'return';
 
 // Methods
 IF: 'if';
@@ -181,6 +235,6 @@ LETTER: [a-zA-Z];
 UNDERSCORE: '_';
 
 // Whitespace and comment
-COMMENT: ('/*' .*? '*/') -> skip;
+COMMENT: ('/*' .*? '*/') NEWLINE -> skip;
 WS: ([ \t\r]) -> skip;
 NEWLINE: '\n'+;
