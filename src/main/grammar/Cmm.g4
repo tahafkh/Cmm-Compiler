@@ -40,9 +40,28 @@ short_body
     ;
 
 expression
-    :( | TYPE)
-    IDENTIFIER ASSIGN INTEGER PLUS INTEGER
+    : LPAR expression RPAR {System.out.println("Operator:()";}
+    | M=(MINUS | NOT) expression {System.out.println("Operator:" + $M.getText());}
+    | expression X=(DIV | MULT) expression {System.out.println("Operator:" + $X.getText());}
+    | expression Y=(PLUS | MINUS) expression {System.out.println("Operator:" + $Y.getText());}
+    | expression Z=(GREATER_THAN | LESS_THAN) expression {System.out.println("Operator:" + $Z.getText());}
+    | expression EQUAL expression {System.out.println("Operator:==";}
+    | expression AND expression {System.out.println("Operator:&");}
+    | expression OR expression {System.out.println("Operator:|");}
+    | expression ASSIGN expression {System.out.println("Operator:=");}
+    | expression COMMA expression {System.out.println("Operator:,");}
+    | value
     ;
+
+
+value: INTEGER | BOOL_VALUE | variable;
+variable: (IDENTIFIER | list_refrence | method_call) (dot_refrence | bracket_indexing | extra_parantheses)*;
+extra_parantheses: LPAR parameters RPAR;
+list_refrence: IDENTIFIER bracket_indexing;
+method_call: IDENTIFIER LPAR parameters RPAR;
+parameters: (expression (COMMA expression)*)?;
+dot_refrence: DOT (IDENTIFIER | list_refrence) {System.out.println("Operator:.";};
+bracket_indexing: LBRACK expression RBRACK {System.out.println("Operator:[]";};
 
 //__________________________________________________________________________________________________________
 
@@ -74,7 +93,7 @@ list_decleration
     : LIST SHARP type IDENTIFIER
     ;
 
-list_type //Can't be initialized
+list_type // Can't be initialized
     : LIST SHARP type
     ;
 
@@ -94,8 +113,6 @@ declare_statement
     : ((type IDENTIFIER ( | SEMICOLON )) | (initable_type IDENTIFIER ASSIGN expression))
     NEWLINE
     ;
-
-
 
 
 //Tokens
