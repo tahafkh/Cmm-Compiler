@@ -10,6 +10,7 @@ grammar Cmm;
 // fptr
 // expression
 // operator precedence
+// function input handling
 
 main
     : MAIN LPAR RPAR func_body //body is like function body
@@ -78,11 +79,11 @@ struct_init
     ;
 
 set_get
-    : arguments BEGIN setter getter END
+    : type IDENTIFIER arguments BEGIN setter getter END
     ;
 
 setter
-    : SET (NEWLINE expression | BEGIN expression+ END)
+    : SET ((NEWLINE expression ( | SEMICOLON) NEWLINE) |( BEGIN (expression ( | SEMICOLON) NEWLINE)+ END))
     ;
 
 getter
