@@ -3,10 +3,7 @@ grammar Cmm;
 //Rules
 //TODO
 // Check new line at the beginning of file
-// main
 // function
-// while do while
-// if else
 // function input handling
 // pre-defined functions
 
@@ -165,8 +162,8 @@ return_statement
     : RETURN expression NEWLINE {System.out.println("Return");}
     ;
 
-eol
-    : (SEMICOLON NEWLINE* | NEWLINE)
+eol //(SEMICOLON NEWLINE* | NEWLINE)
+    : (SEMICOLON | ) NEWLINE
     ;
 
 
@@ -208,7 +205,6 @@ COMMA: ',';
 DOT: '.';
 SEMICOLON: ';';
 ARROW: '->';
-//LITERALS: INTEGER | BOOL_VALUE;
 
 // Operators
 PLUS: '+';
