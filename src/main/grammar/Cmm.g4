@@ -7,7 +7,9 @@ grammar Cmm;
 // function input handling
 // pre-defined functions 33/100
 
-cmm: NEWLINE* struct_decleration* NEWLINE* function_decleration* NEWLINE* main;
+cmm
+    : NEWLINE* struct_decleration* NEWLINE* function_decleration* NEWLINE* main
+    ;
 
 //statements
 statement
@@ -17,22 +19,23 @@ statement
     ;
 
 //display statement
-display_statement
+display_statement // fix input
     : DISPLAY {System.out.println("Built-in : display");} LPAR expression RPAR eol
     ;
 
 //size statement
-size_statement
+size_statement // fix input
     : SIZE {System.out.println("Size");} LPAR IDENTIFIER RPAR eol
     ;
 
 //append statement
-append_statement
+append_statement // fix input
     : APPEND {System.out.println("Append");} LPAR IDENTIFIER COMMA expression RPAR eol
+    ;
 
 //conditinal statement
 conditional_statement
-    : IF {System.out.println("Conditional : if");} condition BEGIN statement+ END else_statement?
+    : IF {System.out.println("Conditional : if");} condition (BEGIN statement+ END | NEWLINE statement) else_statement?
     ;
 
 condition
@@ -40,7 +43,7 @@ condition
     ;
 
 else_statement
-    : ELSE BEGIN {System.out.println("Conditional:else");} statement+ END
+    : ELSE {System.out.println("Conditional:else");} (BEGIN statement+ END | NEWLINE statement)
     ;
 
 //loop statements
@@ -49,21 +52,34 @@ loop_statement
     ;
 
 do_while_loop
-    : DO {System.out.println("Loop : do...while");} ((BEGIN  statement+ END) | statement) WHILE condition eol
+    : DO {System.out.println("Loop : do...while");} ((BEGIN  statement+ END) | NEWLINE statement) WHILE condition eol
     ;
 
 while_loop
-    : WHILE condition {System.out.println("Loop : while");} ((BEGIN  statement+ END) | statement)
+    : WHILE condition {System.out.println("Loop : while");} ((BEGIN  statement+ END) | NEWLINE statement)
     ;
 
 //function call statement
 function_call_statement
-    : variable {System.out.println("FunctionCall");} extra_parantheses+ eol
+    : variable {System.out.println("FunctionCall");} eol
     ;
 
 //assignments etc.
 expression_statement
     : expression eol
+    ;
+
+declare_statement //update println
+    : ((type IDENTIFIER) | (initable_type var_init)) (COMMA (var_init | IDENTIFIER))* eol
+    {System.out.println("VarDec:" + $IDENTIFIER.getText());}
+    ;
+
+var_init
+    : IDENTIFIER ASSIGN expression
+    ;
+
+return_statement
+    : RETURN {System.out.println("Return");} expression eol
     ;
 
 main
@@ -75,7 +91,7 @@ function_decleration
     ;
 
 arguments
-    : LPAR type IDENTIFIER (COMMA type IDENTIFIER)* RPAR
+    : LPAR ( | type IDENTIFIER (COMMA type IDENTIFIER)*) RPAR
     ;
 
 func_body
@@ -83,7 +99,7 @@ func_body
     | NEWLINE statement
     ;
 
-expression
+expression // check precedence
     : LPAR expression RPAR {System.out.println("Operator:()";}
     | M=(MINUS | NOT) expression {System.out.println("Operator:" + $M.getText());}
     | expression X=(DIV | MULT) expression {System.out.println("Operator:" + $X.getText());}
@@ -168,16 +184,8 @@ non_initable_type
     : list_type | struct_type
     ;
 
-declare_statement //update println
-    : ((type IDENTIFIER) | (initable_type IDENTIFIER ASSIGN expression)) eol {System.out.println("VarDec:" + $IDENTIFIER.getText());}
-    ;
-
-return_statement
-    : RETURN expression NEWLINE {System.out.println("Return");}
-    ;
-
-eol //(SEMICOLON NEWLINE* | NEWLINE)
-    : (SEMICOLON | ) NEWLINE
+eol //(SEMICOLON | ) NEWLINE
+    : (SEMICOLON NEWLINE* | NEWLINE)
     ;
 
 
