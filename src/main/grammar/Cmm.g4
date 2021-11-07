@@ -4,9 +4,9 @@ grammar Cmm;
 //TODO
 // Check new line at the beginning of file 100/100?
 // function 100/100?
-// function input handling
-// pre-defined functions 33/100
-// 2 bugs: 1.  append(li, 8 * 9 / func())[1][0]; 2. expression precedence
+// function input handling !!!
+// pre-defined functions 100/100?
+// expression precedence !!!
 
 cmm
     : NEWLINE* struct_decleration* NEWLINE* function_decleration* NEWLINE* main
@@ -101,7 +101,13 @@ func_body
     ;
 
 expression // check precedence
-    : LPAR expression RPAR {System.out.println("Operator:()";}
+    : function_call_expression (expression | )
+    | display_expression (expression | )
+    | size_expression (expression | )
+    | append_expression (expression | )
+    | LPAR expression RPAR {System.out.println("Operator:()";}
+    | expression DOT expression
+    | expression LBRACK expression RBRACK
     | M=(MINUS | NOT) expression {System.out.println("Operator:" + $M.getText());}
     | expression X=(DIV | MULT) expression {System.out.println("Operator:" + $X.getText());}
     | expression Y=(PLUS | MINUS) expression {System.out.println("Operator:" + $Y.getText());}
@@ -112,23 +118,19 @@ expression // check precedence
     | expression ASSIGN expression {System.out.println("Operator:=");}
     | expression COMMA expression {System.out.println("Operator:,");}
     | value
-    | function_call_expression
-    | display_expression
-    | size_expression
-    | append_expression
     ;
 
 //  append(li, 8 * 9 / func())[1][0]
 value: INTEGER | BOOL_VALUE | variable;
-variable: (IDENTIFIER | list_refrence | method_call) (dot_refrence | bracket_indexing | extra_parantheses)*;
+variable: (IDENTIFIER | method_call) (bracket_indexing | extra_parantheses)*;
 extra_parantheses: LPAR parameters RPAR;
-list_refrence: IDENTIFIER bracket_indexing;
+//list_refrence: IDENTIFIER bracket_indexing;
 method_call: IDENTIFIER LPAR parameters RPAR;
 parameters: (expression (COMMA expression)*)?;
-dot_refrence: DOT (IDENTIFIER | list_refrence) {System.out.println("Operator:.";};
+//dot_refrence: DOT (IDENTIFIER | list_refrence) {System.out.println("Operator:.";};
 bracket_indexing: LBRACK expression RBRACK {System.out.println("Operator:[]";};
 
-// Fptr:
+// Fptr: UNUSED
 fptr_decleration
     : fptr_type IDENTIFIER (ASSIGN expression | ) eol
     ;
@@ -167,7 +169,7 @@ getter
     ;
 
 
-// List:
+// List: UNUSED
 list_decleration
     : list_type IDENTIFIER
     ;
