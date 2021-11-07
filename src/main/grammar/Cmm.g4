@@ -161,11 +161,11 @@ set_get
     ;
 
 setter
-    : SET ((NEWLINE expression eol) |( BEGIN (expression eol)+ END))
+    : SET ((NEWLINE statement eol) |( BEGIN (statement eol)+ END))
     ;
 
 getter
-    : GET (NEWLINE return_statement | BEGIN expression+ return_statement END)
+    : GET (NEWLINE return_statement | BEGIN statement+ return_statement END)
     ;
 
 
