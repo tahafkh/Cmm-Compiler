@@ -145,7 +145,7 @@ function_type
 
 // Struct:
 struct_decleration
-    : struct_type BEGIN struct_init END
+    : struct_type ((BEGIN struct_init END) | NEWLINE struct_statement)
     ;
 
 struct_type
@@ -153,7 +153,11 @@ struct_type
     ;
 
 struct_init
-    : (declare_statement | set_get)+
+    : struct_statement+
+    ;
+
+struct_statement
+    : declare_statement | set_get
     ;
 
 set_get
