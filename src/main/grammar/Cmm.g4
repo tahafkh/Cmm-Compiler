@@ -6,6 +6,7 @@ grammar Cmm;
 // function 100/100?
 // function input handling
 // pre-defined functions 33/100
+// 2 bugs: 1.  append(li, 8 * 9 / func())[1][0]; 2. expression precedence
 
 cmm
     : NEWLINE* struct_decleration* NEWLINE* function_decleration* NEWLINE* main
@@ -70,7 +71,7 @@ expression_statement
     ;
 
 declare_statement //update println
-    : ((type IDENTIFIER) | (initable_type var_init)) (COMMA (var_init | IDENTIFIER))* eol
+    : (type (IDENTIFIER | var_init)) (COMMA (var_init | IDENTIFIER))* eol
     {System.out.println("VarDec:" + $IDENTIFIER.getText());}
     ;
 
@@ -117,7 +118,7 @@ expression // check precedence
     | append_expression
     ;
 
-
+//  append(li, 8 * 9 / func())[1][0]
 value: INTEGER | BOOL_VALUE | variable;
 variable: (IDENTIFIER | list_refrence | method_call) (dot_refrence | bracket_indexing | extra_parantheses)*;
 extra_parantheses: LPAR parameters RPAR;
