@@ -13,24 +13,24 @@ cmm
 
 //statements
 statement
-    : conditional_statement | loop_statement | function_call_statement
+    : conditional_statement | loop_statement | function_call_expression
     | declare_statement | return_statement | expression_statement
-    | display_statement | size_statement | append_statement
+    | display_expression | size_expression | append_expression
     ;
 
 //display statement
-display_statement // fix input
-    : DISPLAY {System.out.println("Built-in : display");} LPAR expression RPAR eol
+display_expression // fix input
+    : DISPLAY {System.out.println("Built-in : display");} LPAR expression RPAR
     ;
 
 //size statement
-size_statement // fix input
-    : SIZE {System.out.println("Size");} LPAR IDENTIFIER RPAR eol
+size_expression // fix input
+    : SIZE {System.out.println("Size");} LPAR expression RPAR
     ;
 
 //append statement
-append_statement // fix input
-    : APPEND {System.out.println("Append");} LPAR IDENTIFIER COMMA expression RPAR eol
+append_expression // fix input
+    : APPEND {System.out.println("Append");} LPAR expression COMMA expression RPAR
     ;
 
 //conditinal statement
@@ -60,8 +60,8 @@ while_loop
     ;
 
 //function call statement
-function_call_statement
-    : variable {System.out.println("FunctionCall");} eol
+function_call_expression
+    : variable {System.out.println("FunctionCall");}
     ;
 
 //assignments etc.
@@ -111,6 +111,10 @@ expression // check precedence
     | expression ASSIGN expression {System.out.println("Operator:=");}
     | expression COMMA expression {System.out.println("Operator:,");}
     | value
+    | function_call_expression
+    | display_expression
+    | size_expression
+    | append_expression
     ;
 
 
