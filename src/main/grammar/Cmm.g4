@@ -1,10 +1,6 @@
 grammar Cmm;
 
 //Rules
-//TODO
-// function 100/100?
-// function input handling !!!
-
 cmm
     : NEWLINE* struct_decleration* NEWLINE* function_decleration* NEWLINE* main
     ;
