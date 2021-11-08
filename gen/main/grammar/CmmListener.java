@@ -28,35 +28,35 @@ public interface CmmListener extends ParseTreeListener {
 	 */
 	void exitStatement(CmmParser.StatementContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link CmmParser#display_statement}.
+	 * Enter a parse tree produced by {@link CmmParser#display_expression}.
 	 * @param ctx the parse tree
 	 */
-	void enterDisplay_statement(CmmParser.Display_statementContext ctx);
+	void enterDisplay_expression(CmmParser.Display_expressionContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link CmmParser#display_statement}.
+	 * Exit a parse tree produced by {@link CmmParser#display_expression}.
 	 * @param ctx the parse tree
 	 */
-	void exitDisplay_statement(CmmParser.Display_statementContext ctx);
+	void exitDisplay_expression(CmmParser.Display_expressionContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link CmmParser#size_statement}.
+	 * Enter a parse tree produced by {@link CmmParser#size_expression}.
 	 * @param ctx the parse tree
 	 */
-	void enterSize_statement(CmmParser.Size_statementContext ctx);
+	void enterSize_expression(CmmParser.Size_expressionContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link CmmParser#size_statement}.
+	 * Exit a parse tree produced by {@link CmmParser#size_expression}.
 	 * @param ctx the parse tree
 	 */
-	void exitSize_statement(CmmParser.Size_statementContext ctx);
+	void exitSize_expression(CmmParser.Size_expressionContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link CmmParser#append_statement}.
+	 * Enter a parse tree produced by {@link CmmParser#append_expression}.
 	 * @param ctx the parse tree
 	 */
-	void enterAppend_statement(CmmParser.Append_statementContext ctx);
+	void enterAppend_expression(CmmParser.Append_expressionContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link CmmParser#append_statement}.
+	 * Exit a parse tree produced by {@link CmmParser#append_expression}.
 	 * @param ctx the parse tree
 	 */
-	void exitAppend_statement(CmmParser.Append_statementContext ctx);
+	void exitAppend_expression(CmmParser.Append_expressionContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link CmmParser#conditional_statement}.
 	 * @param ctx the parse tree
@@ -118,16 +118,6 @@ public interface CmmListener extends ParseTreeListener {
 	 */
 	void exitWhile_loop(CmmParser.While_loopContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link CmmParser#function_call_statement}.
-	 * @param ctx the parse tree
-	 */
-	void enterFunction_call_statement(CmmParser.Function_call_statementContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link CmmParser#function_call_statement}.
-	 * @param ctx the parse tree
-	 */
-	void exitFunction_call_statement(CmmParser.Function_call_statementContext ctx);
-	/**
 	 * Enter a parse tree produced by {@link CmmParser#expression_statement}.
 	 * @param ctx the parse tree
 	 */
@@ -148,6 +138,16 @@ public interface CmmListener extends ParseTreeListener {
 	 */
 	void exitDeclare_statement(CmmParser.Declare_statementContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link CmmParser#var_init}.
+	 * @param ctx the parse tree
+	 */
+	void enterVar_init(CmmParser.Var_initContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link CmmParser#var_init}.
+	 * @param ctx the parse tree
+	 */
+	void exitVar_init(CmmParser.Var_initContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link CmmParser#return_statement}.
 	 * @param ctx the parse tree
 	 */
@@ -157,6 +157,16 @@ public interface CmmListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitReturn_statement(CmmParser.Return_statementContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link CmmParser#function_call_statement}.
+	 * @param ctx the parse tree
+	 */
+	void enterFunction_call_statement(CmmParser.Function_call_statementContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link CmmParser#function_call_statement}.
+	 * @param ctx the parse tree
+	 */
+	void exitFunction_call_statement(CmmParser.Function_call_statementContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link CmmParser#main}.
 	 * @param ctx the parse tree
@@ -198,15 +208,115 @@ public interface CmmListener extends ParseTreeListener {
 	 */
 	void exitFunc_body(CmmParser.Func_bodyContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link CmmParser#expression}.
+	 * Enter a parse tree produced by {@link CmmParser#comma_expression}.
 	 * @param ctx the parse tree
 	 */
-	void enterExpression(CmmParser.ExpressionContext ctx);
+	void enterComma_expression(CmmParser.Comma_expressionContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link CmmParser#expression}.
+	 * Exit a parse tree produced by {@link CmmParser#comma_expression}.
 	 * @param ctx the parse tree
 	 */
-	void exitExpression(CmmParser.ExpressionContext ctx);
+	void exitComma_expression(CmmParser.Comma_expressionContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link CmmParser#assign_expression}.
+	 * @param ctx the parse tree
+	 */
+	void enterAssign_expression(CmmParser.Assign_expressionContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link CmmParser#assign_expression}.
+	 * @param ctx the parse tree
+	 */
+	void exitAssign_expression(CmmParser.Assign_expressionContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link CmmParser#or_expression}.
+	 * @param ctx the parse tree
+	 */
+	void enterOr_expression(CmmParser.Or_expressionContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link CmmParser#or_expression}.
+	 * @param ctx the parse tree
+	 */
+	void exitOr_expression(CmmParser.Or_expressionContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link CmmParser#and_expression}.
+	 * @param ctx the parse tree
+	 */
+	void enterAnd_expression(CmmParser.And_expressionContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link CmmParser#and_expression}.
+	 * @param ctx the parse tree
+	 */
+	void exitAnd_expression(CmmParser.And_expressionContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link CmmParser#equal_expression}.
+	 * @param ctx the parse tree
+	 */
+	void enterEqual_expression(CmmParser.Equal_expressionContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link CmmParser#equal_expression}.
+	 * @param ctx the parse tree
+	 */
+	void exitEqual_expression(CmmParser.Equal_expressionContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link CmmParser#relation_expression}.
+	 * @param ctx the parse tree
+	 */
+	void enterRelation_expression(CmmParser.Relation_expressionContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link CmmParser#relation_expression}.
+	 * @param ctx the parse tree
+	 */
+	void exitRelation_expression(CmmParser.Relation_expressionContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link CmmParser#add_sub_expression}.
+	 * @param ctx the parse tree
+	 */
+	void enterAdd_sub_expression(CmmParser.Add_sub_expressionContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link CmmParser#add_sub_expression}.
+	 * @param ctx the parse tree
+	 */
+	void exitAdd_sub_expression(CmmParser.Add_sub_expressionContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link CmmParser#mult_div_expression}.
+	 * @param ctx the parse tree
+	 */
+	void enterMult_div_expression(CmmParser.Mult_div_expressionContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link CmmParser#mult_div_expression}.
+	 * @param ctx the parse tree
+	 */
+	void exitMult_div_expression(CmmParser.Mult_div_expressionContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link CmmParser#not_expression}.
+	 * @param ctx the parse tree
+	 */
+	void enterNot_expression(CmmParser.Not_expressionContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link CmmParser#not_expression}.
+	 * @param ctx the parse tree
+	 */
+	void exitNot_expression(CmmParser.Not_expressionContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link CmmParser#high_expression}.
+	 * @param ctx the parse tree
+	 */
+	void enterHigh_expression(CmmParser.High_expressionContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link CmmParser#high_expression}.
+	 * @param ctx the parse tree
+	 */
+	void exitHigh_expression(CmmParser.High_expressionContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link CmmParser#final_expression}.
+	 * @param ctx the parse tree
+	 */
+	void enterFinal_expression(CmmParser.Final_expressionContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link CmmParser#final_expression}.
+	 * @param ctx the parse tree
+	 */
+	void exitFinal_expression(CmmParser.Final_expressionContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link CmmParser#value}.
 	 * @param ctx the parse tree
@@ -218,46 +328,6 @@ public interface CmmListener extends ParseTreeListener {
 	 */
 	void exitValue(CmmParser.ValueContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link CmmParser#variable}.
-	 * @param ctx the parse tree
-	 */
-	void enterVariable(CmmParser.VariableContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link CmmParser#variable}.
-	 * @param ctx the parse tree
-	 */
-	void exitVariable(CmmParser.VariableContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link CmmParser#extra_parantheses}.
-	 * @param ctx the parse tree
-	 */
-	void enterExtra_parantheses(CmmParser.Extra_paranthesesContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link CmmParser#extra_parantheses}.
-	 * @param ctx the parse tree
-	 */
-	void exitExtra_parantheses(CmmParser.Extra_paranthesesContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link CmmParser#list_refrence}.
-	 * @param ctx the parse tree
-	 */
-	void enterList_refrence(CmmParser.List_refrenceContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link CmmParser#list_refrence}.
-	 * @param ctx the parse tree
-	 */
-	void exitList_refrence(CmmParser.List_refrenceContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link CmmParser#method_call}.
-	 * @param ctx the parse tree
-	 */
-	void enterMethod_call(CmmParser.Method_callContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link CmmParser#method_call}.
-	 * @param ctx the parse tree
-	 */
-	void exitMethod_call(CmmParser.Method_callContext ctx);
-	/**
 	 * Enter a parse tree produced by {@link CmmParser#parameters}.
 	 * @param ctx the parse tree
 	 */
@@ -267,36 +337,6 @@ public interface CmmListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitParameters(CmmParser.ParametersContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link CmmParser#dot_refrence}.
-	 * @param ctx the parse tree
-	 */
-	void enterDot_refrence(CmmParser.Dot_refrenceContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link CmmParser#dot_refrence}.
-	 * @param ctx the parse tree
-	 */
-	void exitDot_refrence(CmmParser.Dot_refrenceContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link CmmParser#bracket_indexing}.
-	 * @param ctx the parse tree
-	 */
-	void enterBracket_indexing(CmmParser.Bracket_indexingContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link CmmParser#bracket_indexing}.
-	 * @param ctx the parse tree
-	 */
-	void exitBracket_indexing(CmmParser.Bracket_indexingContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link CmmParser#fptr_decleration}.
-	 * @param ctx the parse tree
-	 */
-	void enterFptr_decleration(CmmParser.Fptr_declerationContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link CmmParser#fptr_decleration}.
-	 * @param ctx the parse tree
-	 */
-	void exitFptr_decleration(CmmParser.Fptr_declerationContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link CmmParser#fptr_type}.
 	 * @param ctx the parse tree
@@ -347,6 +387,16 @@ public interface CmmListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitStruct_init(CmmParser.Struct_initContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link CmmParser#struct_statement}.
+	 * @param ctx the parse tree
+	 */
+	void enterStruct_statement(CmmParser.Struct_statementContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link CmmParser#struct_statement}.
+	 * @param ctx the parse tree
+	 */
+	void exitStruct_statement(CmmParser.Struct_statementContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link CmmParser#set_get}.
 	 * @param ctx the parse tree

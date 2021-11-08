@@ -49,6 +49,7 @@ COMMENT=48
 WS=49
 NEWLINE=50
 'main'=1
+'end'=3
 'return'=4
 'if'=5
 'else'=6

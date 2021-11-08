@@ -23,23 +23,23 @@ public interface CmmVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitStatement(CmmParser.StatementContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link CmmParser#display_statement}.
+	 * Visit a parse tree produced by {@link CmmParser#display_expression}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitDisplay_statement(CmmParser.Display_statementContext ctx);
+	T visitDisplay_expression(CmmParser.Display_expressionContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link CmmParser#size_statement}.
+	 * Visit a parse tree produced by {@link CmmParser#size_expression}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitSize_statement(CmmParser.Size_statementContext ctx);
+	T visitSize_expression(CmmParser.Size_expressionContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link CmmParser#append_statement}.
+	 * Visit a parse tree produced by {@link CmmParser#append_expression}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitAppend_statement(CmmParser.Append_statementContext ctx);
+	T visitAppend_expression(CmmParser.Append_expressionContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link CmmParser#conditional_statement}.
 	 * @param ctx the parse tree
@@ -77,12 +77,6 @@ public interface CmmVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitWhile_loop(CmmParser.While_loopContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link CmmParser#function_call_statement}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitFunction_call_statement(CmmParser.Function_call_statementContext ctx);
-	/**
 	 * Visit a parse tree produced by {@link CmmParser#expression_statement}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -95,11 +89,23 @@ public interface CmmVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitDeclare_statement(CmmParser.Declare_statementContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link CmmParser#var_init}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitVar_init(CmmParser.Var_initContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link CmmParser#return_statement}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
 	T visitReturn_statement(CmmParser.Return_statementContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link CmmParser#function_call_statement}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitFunction_call_statement(CmmParser.Function_call_statementContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link CmmParser#main}.
 	 * @param ctx the parse tree
@@ -125,11 +131,71 @@ public interface CmmVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitFunc_body(CmmParser.Func_bodyContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link CmmParser#expression}.
+	 * Visit a parse tree produced by {@link CmmParser#comma_expression}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitExpression(CmmParser.ExpressionContext ctx);
+	T visitComma_expression(CmmParser.Comma_expressionContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link CmmParser#assign_expression}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitAssign_expression(CmmParser.Assign_expressionContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link CmmParser#or_expression}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitOr_expression(CmmParser.Or_expressionContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link CmmParser#and_expression}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitAnd_expression(CmmParser.And_expressionContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link CmmParser#equal_expression}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitEqual_expression(CmmParser.Equal_expressionContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link CmmParser#relation_expression}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitRelation_expression(CmmParser.Relation_expressionContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link CmmParser#add_sub_expression}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitAdd_sub_expression(CmmParser.Add_sub_expressionContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link CmmParser#mult_div_expression}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitMult_div_expression(CmmParser.Mult_div_expressionContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link CmmParser#not_expression}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitNot_expression(CmmParser.Not_expressionContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link CmmParser#high_expression}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitHigh_expression(CmmParser.High_expressionContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link CmmParser#final_expression}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitFinal_expression(CmmParser.Final_expressionContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link CmmParser#value}.
 	 * @param ctx the parse tree
@@ -137,53 +203,11 @@ public interface CmmVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitValue(CmmParser.ValueContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link CmmParser#variable}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitVariable(CmmParser.VariableContext ctx);
-	/**
-	 * Visit a parse tree produced by {@link CmmParser#extra_parantheses}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitExtra_parantheses(CmmParser.Extra_paranthesesContext ctx);
-	/**
-	 * Visit a parse tree produced by {@link CmmParser#list_refrence}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitList_refrence(CmmParser.List_refrenceContext ctx);
-	/**
-	 * Visit a parse tree produced by {@link CmmParser#method_call}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitMethod_call(CmmParser.Method_callContext ctx);
-	/**
 	 * Visit a parse tree produced by {@link CmmParser#parameters}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
 	T visitParameters(CmmParser.ParametersContext ctx);
-	/**
-	 * Visit a parse tree produced by {@link CmmParser#dot_refrence}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitDot_refrence(CmmParser.Dot_refrenceContext ctx);
-	/**
-	 * Visit a parse tree produced by {@link CmmParser#bracket_indexing}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitBracket_indexing(CmmParser.Bracket_indexingContext ctx);
-	/**
-	 * Visit a parse tree produced by {@link CmmParser#fptr_decleration}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitFptr_decleration(CmmParser.Fptr_declerationContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link CmmParser#fptr_type}.
 	 * @param ctx the parse tree
@@ -214,6 +238,12 @@ public interface CmmVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitStruct_init(CmmParser.Struct_initContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link CmmParser#struct_statement}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitStruct_statement(CmmParser.Struct_statementContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link CmmParser#set_get}.
 	 * @param ctx the parse tree
