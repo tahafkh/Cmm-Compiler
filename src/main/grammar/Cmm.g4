@@ -2,11 +2,8 @@ grammar Cmm;
 
 //Rules
 //TODO
-// Check new line at the beginning of file 100/100?
 // function 100/100?
 // function input handling !!!
-// pre-defined functions 100/100?
-// expression precedence !!!
 
 cmm
     : NEWLINE* struct_decleration* NEWLINE* function_decleration* NEWLINE* main
@@ -14,37 +11,39 @@ cmm
 
 //statements
 statement
-    : conditional_statement | loop_statement | function_call_expression
+    : conditional_statement | loop_statement
     | declare_statement | return_statement | expression_statement
     | display_expression | size_expression | append_expression
     ;
 
 //display statement
 display_expression // fix input
-    : DISPLAY {System.out.println("Built-in : display");} LPAR expression RPAR
+    : DISPLAY {System.out.println("Built-in : display");} LPAR assign_expression RPAR
     ;
 
 //size statement
 size_expression // fix input
-    : SIZE {System.out.println("Size");} LPAR expression RPAR
+    : SIZE {System.out.println("Size");} LPAR assign_expression RPAR
     ;
 
 //append statement
 append_expression // fix input
-    : APPEND {System.out.println("Append");} LPAR expression COMMA expression RPAR
+    : APPEND {System.out.println("Append");} LPAR assign_expression COMMA assign_expression RPAR
     ;
 
 //conditinal statement
 conditional_statement
-    : IF {System.out.println("Conditional : if");} condition (BEGIN statement+ END | NEWLINE statement) else_statement?
+    : IF {System.out.println("Conditional : if");}
+    condition ((BEGIN  statement eol (statement eol)* END) | (NEWLINE statement)) (eol? else_statement)?
     ;
 
 condition
-    : (LPAR expression RPAR) | expression
+    : (LPAR comma_expression RPAR) | comma_expression
     ;
 
 else_statement
-    : ELSE {System.out.println("Conditional:else");} (BEGIN statement+ END | NEWLINE statement)
+    : ELSE {System.out.println("Conditional : else");}
+    ((BEGIN  statement eol (statement eol)* END) | (NEWLINE statement))
     ;
 
 //loop statements
@@ -53,38 +52,34 @@ loop_statement
     ;
 
 do_while_loop
-    : DO {System.out.println("Loop : do...while");} ((BEGIN  statement+ END) | NEWLINE statement) WHILE condition eol
+    : DO {System.out.println("Loop : do...while");}
+    ((BEGIN  statement eol (statement eol)* END eol?) | (NEWLINE statement)) WHILE condition
     ;
 
 while_loop
-    : WHILE condition {System.out.println("Loop : while");} ((BEGIN  statement+ END) | NEWLINE statement)
+    : WHILE condition {System.out.println("Loop : while");}
+    ((BEGIN statement eol (statement eol)* END) | (NEWLINE statement))
     ;
 
-//function call statement
-//function_call_expression
-//    : variable {System.out.println("FunctionCall");}
-//    ;
-
-//assignments etc.
 expression_statement
-    : expression eol
+    : comma_expression
     ;
 
 declare_statement //update println
-    : (type (IDENTIFIER | var_init)) (COMMA (var_init | IDENTIFIER))* eol
-    {System.out.println("VarDec:" + $IDENTIFIER.getText());}
+    : (type (IDENTIFIER | var_init)) (COMMA (var_init | IDENTIFIER))*
+    {System.out.println("VarDec : " + $IDENTIFIER.getText());}
     ;
 
 var_init
-    : IDENTIFIER ASSIGN expression
+    : IDENTIFIER ASSIGN comma_expression
     ;
 
 return_statement
-    : RETURN {System.out.println("Return");} expression eol
+    : RETURN {System.out.println("Return");} comma_expression?
     ;
 
 main
-    : MAIN LPAR RPAR func_body //body is like function body
+    : MAIN {System.out.println("Main");} LPAR RPAR func_body //body is like function body
     ;
 
 function_decleration
@@ -96,11 +91,11 @@ arguments
     ;
 
 func_body
-    : BEGIN statement+ END
-    | NEWLINE statement
+    : BEGIN (statement eol)+ END NEWLINE
+    | NEWLINE statement eol
     ;
 
-comma_expression
+comma_expression // fix funtion arguments
     : comma_expression COMMA assign_expression {System.out.println("Operator:,");}
     | assign_expression
     ;
@@ -121,59 +116,47 @@ and_expression
     ;
 
 equal_expression
-    : equal_expression AND relation_expression {System.out.println("Operator:==");}
+    : equal_expression EQUAL relation_expression {System.out.println("Operator:==");}
     | relation_expression
     ;
 
 relation_expression
-    : relation_expression Z=(GREATER_THAN | LESS_THAN) add_sub_expression {System.out.println("Operator:" + $Z.getText());}
+    : relation_expression Z=(GREATER_THAN | LESS_THAN) add_sub_expression {System.out.println("Operator : " + $Z.getText());}
     | add_sub_expression
     ;
 
 add_sub_expression
-    : add_sub_expression Y=(PLUS | MINUS) mult_div_expression {System.out.println("Operator:" + $Y.getText());}
+    : add_sub_expression Y=(PLUS | MINUS) mult_div_expression {System.out.println("Operator : " + $Y.getText());}
     | mult_div_expression
     ;
 
 mult_div_expression
-    : mult_div_expression X=(DIV | MULT) not_expression {System.out.println("Operator:" + $X.getText());}
+    : mult_div_expression X=(DIV | MULT) not_expression {System.out.println("Operator : " + $X.getText());}
     | not_expression
     ;
 
 not_expression
-    : M=(MINUS | NOT) high_expression {System.out.println("Operator:" + $M.getText());}
+    : M=(MINUS | NOT) high_expression {System.out.println("Operator : " + $M.getText());}
     | high_expression
     ;
 
 // high expression
 high_expression
     : high_expression DOT final_expression
-    | high_expression LBRACK expression RBRACK
+    | high_expression LBRACK comma_expression RBRACK
     | high_expression LPAR parameters RPAR
+    | final_expression
     ;
 
 final_expression
-expression // check precedence
-    : function_call_expression (expression | )
-    | display_expression (expression | )
-    | size_expression (expression | )
-    | append_expression (expression | )
-    | LPAR expression RPAR
-    |
-    | comma_expression
+    : display_expression
+    | size_expression
+    | append_expression
+    | value
     ;
 
-value: INTEGER | BOOL_VALUE | variable;
-variable: (IDENTIFIER | method_call) (bracket_indexing | extra_parantheses)*;
-extra_parantheses: LPAR parameters RPAR;
-method_call: IDENTIFIER ;
+value: INTEGER | BOOL_VALUE | IDENTIFIER | LPAR comma_expression RPAR;
 parameters: (or_expression (COMMA or_expression)*)?;
-bracket_indexing: LBRACK expression RBRACK {System.out.println("Operator:[]";};
-
-// Fptr: UNUSED
-fptr_decleration
-    : fptr_type IDENTIFIER (ASSIGN expression | ) eol
-    ;
 
 fptr_type
     : FPTR LESS_THAN function_type (COMMA function_type)* ARROW function_type GREATER_THAN
@@ -185,7 +168,7 @@ function_type
 
 // Struct:
 struct_decleration
-    : struct_type ((BEGIN struct_init END) | NEWLINE struct_statement)
+    : struct_type ((BEGIN struct_init END NEWLINE) | NEWLINE struct_statement)
     ;
 
 struct_type
@@ -197,21 +180,20 @@ struct_init
     ;
 
 struct_statement
-    : declare_statement | set_get
+    : (declare_statement eol | set_get)
     ;
 
 set_get
-    : type IDENTIFIER arguments BEGIN setter getter END
+    : type IDENTIFIER arguments BEGIN setter getter END eol
     ;
 
 setter
-    : SET ((NEWLINE statement eol) |( BEGIN (statement eol)+ END))
+    : SET ((NEWLINE statement eol) | (BEGIN (statement eol)+ END eol))
     ;
 
 getter
-    : GET (NEWLINE return_statement | BEGIN statement+ return_statement END)
+    : GET ((NEWLINE statement eol) | (BEGIN (statement eol)+ END eol))
     ;
-
 
 // List: UNUSED
 list_decleration
@@ -243,7 +225,7 @@ eol //(SEMICOLON | ) NEWLINE
 //Tokens
 MAIN: 'main';
 BEGIN: 'begin' WS* NEWLINE;
-END: 'end' WS* NEWLINE;
+END: 'end';
 RETURN: 'return';
 
 // Methods
@@ -304,6 +286,6 @@ LETTER: [a-zA-Z];
 UNDERSCORE: '_';
 
 // Whitespace and comment
-COMMENT: ('/*' .*? '*/') NEWLINE -> skip;
+COMMENT: ('/*' .*? '*/') NEWLINE* -> skip;
 WS: ([ \t\r]) -> skip;
 NEWLINE: '\n'+;
