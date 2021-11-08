@@ -115,6 +115,42 @@ or_expression
     | and_expression
     ;
 
+and_expression
+    : and_expression AND equal_expression {System.out.println("Operator:&");}
+    | equal_expression
+    ;
+
+equal_expression
+    : equal_expression AND relation_expression {System.out.println("Operator:==");}
+    | relation_expression
+    ;
+
+relation_expression
+    : relation_expression Z=(GREATER_THAN | LESS_THAN) add_sub_expression {System.out.println("Operator:" + $Z.getText());}
+    | add_sub_expression
+    ;
+
+add_sub_expression
+    : add_sub_expression Y=(PLUS | MINUS) mult_div_expression {System.out.println("Operator:" + $Y.getText());}
+    | mult_div_expression
+    ;
+
+mult_div_expression
+    : mult_div_expression X=(DIV | MULT) not_expression {System.out.println("Operator:" + $X.getText());}
+    | not_expression
+    ;
+
+not_expression
+    : M=(MINUS | NOT) high_expression {System.out.println("Operator:" + $M.getText());}
+    | high_expression
+    ;
+
+// high expression
+high_expression
+    : M=(MINUS | NOT) high_expression {System.out.println("Operator:" + $M.getText());}
+    | value
+    ;
+
 expression // check precedence
     : function_call_expression (expression | )
     | display_expression (expression | )
@@ -123,15 +159,8 @@ expression // check precedence
     | LPAR expression RPAR
     | expression DOT expression
     | expression LBRACK expression RBRACK
-    | M=(MINUS | NOT) expression {System.out.println("Operator:" + $M.getText());}
-    | expression X=(DIV | MULT) expression {System.out.println("Operator:" + $X.getText());}
-    | expression Y=(PLUS | MINUS) expression {System.out.println("Operator:" + $Y.getText());}
-    | expression Z=(GREATER_THAN | LESS_THAN) expression {System.out.println("Operator:" + $Z.getText());}
-    | expression EQUAL expression {System.out.println("Operator:==";}
-    | expression AND expression {System.out.println("Operator:&");}
-    |
-    |
-    |
+    | comma_expression
+    ;
 
 value: INTEGER | BOOL_VALUE | variable;
 variable: (IDENTIFIER | method_call) (bracket_indexing | extra_parantheses)*;
