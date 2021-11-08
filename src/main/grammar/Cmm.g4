@@ -61,9 +61,9 @@ while_loop
     ;
 
 //function call statement
-function_call_expression
-    : variable {System.out.println("FunctionCall");}
-    ;
+//function_call_expression
+//    : variable {System.out.println("FunctionCall");}
+//    ;
 
 //assignments etc.
 expression_statement
@@ -147,26 +147,27 @@ not_expression
 
 // high expression
 high_expression
-    : M=(MINUS | NOT) high_expression {System.out.println("Operator:" + $M.getText());}
-    | value
+    : high_expression DOT final_expression
+    | high_expression LBRACK expression RBRACK
+    | high_expression LPAR parameters RPAR
     ;
 
+final_expression
 expression // check precedence
     : function_call_expression (expression | )
     | display_expression (expression | )
     | size_expression (expression | )
     | append_expression (expression | )
     | LPAR expression RPAR
-    | expression DOT expression
-    | expression LBRACK expression RBRACK
+    |
     | comma_expression
     ;
 
 value: INTEGER | BOOL_VALUE | variable;
 variable: (IDENTIFIER | method_call) (bracket_indexing | extra_parantheses)*;
 extra_parantheses: LPAR parameters RPAR;
-method_call: IDENTIFIER LPAR parameters RPAR;
-parameters: (expression (COMMA expression)*)?;
+method_call: IDENTIFIER ;
+parameters: (or_expression (COMMA or_expression)*)?;
 bracket_indexing: LBRACK expression RBRACK {System.out.println("Operator:[]";};
 
 // Fptr: UNUSED
