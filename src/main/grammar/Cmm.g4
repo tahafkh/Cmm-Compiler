@@ -100,12 +100,27 @@ func_body
     | NEWLINE statement
     ;
 
+comma_expression
+    : comma_expression COMMA assign_expression {System.out.println("Operator:,");}
+    | assign_expression
+    ;
+
+assign_expression
+    : assign_expression ASSIGN or_expression {System.out.println("Operator:=");}
+    | or_expression
+    ;
+
+or_expression
+    : or_expression OR and_expression {System.out.println("Operator:|");}
+    | and_expression
+    ;
+
 expression // check precedence
     : function_call_expression (expression | )
     | display_expression (expression | )
     | size_expression (expression | )
     | append_expression (expression | )
-    | LPAR expression RPAR {System.out.println("Operator:()";}
+    | LPAR expression RPAR
     | expression DOT expression
     | expression LBRACK expression RBRACK
     | M=(MINUS | NOT) expression {System.out.println("Operator:" + $M.getText());}
@@ -114,20 +129,15 @@ expression // check precedence
     | expression Z=(GREATER_THAN | LESS_THAN) expression {System.out.println("Operator:" + $Z.getText());}
     | expression EQUAL expression {System.out.println("Operator:==";}
     | expression AND expression {System.out.println("Operator:&");}
-    | expression OR expression {System.out.println("Operator:|");}
-    | expression ASSIGN expression {System.out.println("Operator:=");}
-    | expression COMMA expression {System.out.println("Operator:,");}
-    | value
-    ;
+    |
+    |
+    |
 
-//  append(li, 8 * 9 / func())[1][0]
 value: INTEGER | BOOL_VALUE | variable;
 variable: (IDENTIFIER | method_call) (bracket_indexing | extra_parantheses)*;
 extra_parantheses: LPAR parameters RPAR;
-//list_refrence: IDENTIFIER bracket_indexing;
 method_call: IDENTIFIER LPAR parameters RPAR;
 parameters: (expression (COMMA expression)*)?;
-//dot_refrence: DOT (IDENTIFIER | list_refrence) {System.out.println("Operator:.";};
 bracket_indexing: LBRACK expression RBRACK {System.out.println("Operator:[]";};
 
 // Fptr: UNUSED
