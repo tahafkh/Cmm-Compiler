@@ -1,33 +1,55 @@
+struct S begin
+    int attr1 = 5 + 3; fptr<void -> int> pointer;
+    list # bool myList
 
 
+        fptr<list#list#int, int -> void> p
 
-struct S1 begin
-    int var1 , var2 = 3;
-    int id (int _id) begin
+    int property(int _property) begin
         set begin
-            id = _id;
+        property = _property;
+        display(_property);
         end
-    get
-        return id
+
+
+            get begin
+     return size(append(myList, property*2 -3));
+
+            end
     end
+
 end
 
+    struct S1
+     struct S x = 15 | (3-12*9/2) & -5;
+    struct S2 begin
+        bool is_true_9_
+    end
 
-fptr <int -> int> f1(int arg1, bool arg1, list# list# struct S1 arg2) begin
-    fptr <void -> void> ptr1 = f1;
-    return ptr1;
-end
-int sample()
-    if a | b * c + d / g
-    if ~(a & b)
-    return append(li, 8 * 9 / func())[1][0];
-    else
-        return -size(li) + a - n;
+  int f(int x)
+    return /**narni**/ x*x + 5
 
-main() begin
-    f1()();
-    do
+    void g() begin
+    struct S s;
+   if s + 1 == 5
 
-    i = i + 1 - 3;
-    while i < n & i > k;
-end
+    return
+    else begin
+        return g() * f();
+    end
+    end
+
+  main   (   )     begin
+  int intx,y=1-3*8,z=6; int t;
+  g();
+  f(x+5*g())
+
+    while(y + intx > t*z) begin
+            do begin
+                /*this is do while*/
+                return 3
+             end while f(intx) *(intx+6); display(f(t)());
+        end
+	display(size(myList))
+    return y;
+  end

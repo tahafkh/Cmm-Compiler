@@ -18,6 +18,16 @@ public interface CmmListener extends ParseTreeListener {
 	 */
 	void exitCmm(CmmParser.CmmContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link CmmParser#no_function_call_statement}.
+	 * @param ctx the parse tree
+	 */
+	void enterNo_function_call_statement(CmmParser.No_function_call_statementContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link CmmParser#no_function_call_statement}.
+	 * @param ctx the parse tree
+	 */
+	void exitNo_function_call_statement(CmmParser.No_function_call_statementContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link CmmParser#statement}.
 	 * @param ctx the parse tree
 	 */

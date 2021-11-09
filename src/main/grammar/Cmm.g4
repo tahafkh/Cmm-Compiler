@@ -5,9 +5,11 @@ cmm
     : NEWLINE* struct_decleration* NEWLINE* function_decleration* NEWLINE* main
     ;
 
-//statement
-//    : body | expression_statement
-//    ;
+no_function_call_statement
+    : conditional_statement | loop_statement
+      | declare_statement | return_statement | assign_expression
+      | display_expression | size_expression | append_expression
+    ;
 
 //statements
 statement
@@ -71,7 +73,7 @@ declare_statement //update println
     ;
 
 var_init
-    : IDENTIFIER {System.out.println("VarDec : " + $IDENTIFIER.getText());} ASSIGN comma_expression
+    : IDENTIFIER {System.out.println("VarDec : " + $IDENTIFIER.getText());} ASSIGN no_function_call_statement
     ;
 
 return_statement
@@ -79,7 +81,7 @@ return_statement
     ;
 
 function_call_statement
-    : expression_statement LPAR parameters RPAR {System.out.println("FunctionCall");}
+    : expression_statement {System.out.println("FunctionCall");} LPAR parameters RPAR
     ;
 
 main
@@ -190,7 +192,7 @@ struct_statement
     ;
 
 set_get
-    : type IDENTIFIER arguments BEGIN setter getter END eol
+    : type IDENTIFIER {System.out.println("VarDec : " + $IDENTIFIER.getText());} arguments BEGIN setter getter END eol
     ;
 
 setter

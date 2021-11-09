@@ -17,6 +17,12 @@ public interface CmmVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitCmm(CmmParser.CmmContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link CmmParser#no_function_call_statement}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitNo_function_call_statement(CmmParser.No_function_call_statementContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link CmmParser#statement}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
