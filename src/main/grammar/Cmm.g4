@@ -163,7 +163,7 @@ final_expression
     ;
 
 value: INTEGER | BOOL_VALUE | IDENTIFIER | LPAR comma_expression RPAR;
-parameters: (or_expression (COMMA or_expression)*)?;
+parameters: (assign_expression (COMMA assign_expression)*)?;
 
 fptr_type
     : FPTR LESS_THAN function_type (COMMA function_type)* ARROW function_type GREATER_THAN
