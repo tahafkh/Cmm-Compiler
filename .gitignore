@@ -2,5 +2,5 @@
 .idea/
 Phase 1.iml
 antlr-4.9.2-complete.jar
-out
-gen
+out/
+gen/
