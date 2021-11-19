@@ -19,17 +19,17 @@ statement
     ;
 
 //display statement
-display_expression // fix input
+display_expression
     : DISPLAY {System.out.println("Built-in : display");} LPAR expression_statement RPAR
     ;
 
 //size statement
-size_expression // fix input
+size_expression
     : SIZE {System.out.println("Size");} LPAR expression_statement RPAR
     ;
 
 //append statement
-append_expression // fix input
+append_expression
     : APPEND {System.out.println("Append");} LPAR expression_statement COMMA expression_statement RPAR
     ;
 
@@ -67,7 +67,7 @@ expression_statement
     : comma_expression
     ;
 
-declare_statement //update println
+declare_statement
     : (type (IDENTIFIER {System.out.println("VarDec : " + $IDENTIFIER.getText());} | var_init))
     (COMMA (var_init | IDENTIFIER {System.out.println("VarDec : " + $IDENTIFIER.getText());}))*
     ;
@@ -102,13 +102,13 @@ func_body
     | NEWLINE statement eol
     ;
 
-comma_expression // fix funtion arguments
+comma_expression
     : comma_expression COMMA assign_expression {System.out.println("Operator : ,");}
     | assign_expression
     ;
 
 assign_expression
-    : assign_expression ASSIGN or_expression //{System.out.println("Operator : =");}
+    : assign_expression ASSIGN or_expression
     | or_expression
     ;
 
