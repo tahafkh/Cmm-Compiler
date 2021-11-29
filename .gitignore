@@ -1,6 +1,6 @@
 #intellij configurations
 .idea/
-Phase 1.iml
+*.iml
 antlr-4.9.2-complete.jar
 out/
 gen/
