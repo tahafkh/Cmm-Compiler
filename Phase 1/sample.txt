@@ -1,0 +1,2 @@
+main()begin
+fptr<int -> list#int> functionPointer struct House h1,h2,h3,h4 struct Room r1 r1.area = 12 h1.room = r1 h1.area = (90) functionPointer = f3(true, 5*2+3-2*2+(-1) ,h1) list#int numbers = functionPointer(15) list#list#struct House houses list#struct House alley1 list#struct House alley2 append(alley1, h2) append(alley1, h3) display(size(alley1)) append(houses, alley1) append(houses, alley2) append(houses[1], h4) end
