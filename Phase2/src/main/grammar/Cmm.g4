@@ -99,8 +99,22 @@ blockStatement returns [BlockStmt stmt]:
     (SEMICOLON)?)+ NEWLINE+ END;
 
 //todo
-varDecStatement :
-    type identifier (ASSIGN orExpression )? (COMMA identifier (ASSIGN orExpression)? )*;
+varDecStatement returns [VarDecStmt stmt] locals [VariableDeclaration var]:
+    {$stmt = new varDecStatement();}
+    t=type i=identifier
+    {$stmt.setLine($i.getLine());
+     $var = new VariableDeclaration($i.expr, $t.tp);}
+    (ASSIGN oe=orExpression
+    {$var.setDefaultValue($oe.expr);}
+    )?
+    {$stmt.addVar($var);}
+    (COMMA i=identifier
+    {$var = new VariableDeclaration($i.expr, $t.tp);}
+    (ASSIGN oe=orExpression
+    {$var.setDefaultValue($oe.expr);}
+    )?
+    {$stmt.addVar($var);}
+    )*;
 
 //todo
 functionCallStmt :
@@ -251,9 +265,9 @@ multiplicativeExpression returns [Expression expr] locals [BinaryOperator _op]:
 //todo
 preUnaryExpression returns [Expression expr] locals [UnaryOperator _op]:
     ((op = NOT
-    {$_op = UnaryOperator.not}
+    {$_op = UnaryOperator.not;}
     | op = MINUS
-    {$_op = UnaryOperator.minus}
+    {$_op = UnaryOperator.minus;}
     )
     pu=preUnaryExpression
     {$expr = new UnaryExpression($pu.expr, _op);
@@ -263,40 +277,99 @@ preUnaryExpression returns [Expression expr] locals [UnaryOperator _op]:
     {$expr = $ex.expr;};
 
 //todo
-accessExpression:
-    otherExpression ((LPAR functionArguments RPAR) | (DOT identifier))*  ((LBRACK expression RBRACK) | (DOT identifier))*;
+accessExpression returns [Expression expr]:
+    oe=otherExpression
+    {$expr = $oe.expr;}
+    ((LPAR f=functionArguments RPAR)
+    | (DOT identifier))*  ((LBRACK expression RBRACK) | (DOT identifier))*;
 
 //todo
-otherExpression:
-    value | identifier | LPAR (functionArguments) RPAR | size | append ;
+otherExpression returns [Expression expr]:
+    v=value
+    {$expr = $v.expr;}
+    | i=identifier
+    {$expr = $i.expr;}
+    | lp=LPAR (f=functionArguments) RPAR
+    {$expr = $f.expr;
+     $expr.setLine($lp.getLine());}
+    | s=size
+    {$expr = $s.expr;}
+    | a=append
+    {$expr = $a.expr;}
+    ;
 
 //todo
-size :
-    SIZE LPAR expression RPAR;
+size returns [ListSize expr]:
+    s=SIZE
+    LPAR arg=expression RPAR
+    {$expr = new ListSize($arg.expr);
+     $expr.setLine($s.getLine());}
+     ;
 
 //todo
-append :
-    APPEND LPAR expression COMMA expression RPAR;
+append returns [ListAppend expr]:
+    a=APPEND
+    LPAR liarg=expression COMMA elarg=expression RPAR
+    {$expr = new ListAppend($liarg.expr, $elarg.expr);
+     $expr.setLine($a.getLine());}
+     ;
 
 //todo
-value :
-    boolValue | INT_VALUE;
+value returns [Value expr]:
+    bv=boolValue
+    {$expr = $bv.expr;}
+    | i=INT_VALUE
+    {$expr = new IntValue($i.int);
+     $expr.setLine($i.getLine());}
+    ;
 
 //todo
-boolValue:
-    TRUE | FALSE;
+boolValue returns [BoolValue expr]:
+    a=TRUE | a=FALSE
+    {$expr = new BoolValue($a.val);
+     $expr.setLine($a.getLine());}
+    ;
 
 //todo
-identifier:
-    IDENTIFIER;
+identifier returns [Identifier expr]:
+    i=IDENTIFIER
+    {$expr = new Identifier($i.text);
+     $expr.setLine($i.getLine());
+    }
+    ;
 
 //todo
-type:
-    INT | BOOL | LIST SHARP type | STRUCT identifier | fptrType;
+type returns [Type tp]:
+    INT
+    {$tp = new IntType();}
+    | BOOL
+    {$tp = new BoolType();}
+    | LIST SHARP t=type
+    {$tp = ListType($t.tp);}
+    | STRUCT i=identifier
+    {$tp = StructType($i.expr);}
+    | f=fptrType
+    {$tp = $f.tp;}
+    ;
 
 //todo
-fptrType:
-    FPTR LESS_THAN (VOID | (type (COMMA type)*)) ARROW (type | VOID) GREATER_THAN;
+fptrType returns [FptrType tp] locals [ArrayList<Type> args, Type return]:
+    FPTR
+    {$args = new ArrayList<Type>;}
+    LESS_THAN (VOID
+    {$args.add(new VoidType());}
+    | (t=type
+    {$args.add($t.tp);}
+    (COMMA t=type
+    {$args.add($t.tp);}
+    )*)) ARROW (t=type
+    {$return = $t.tp;}
+    |
+    VOID
+    {$return = new VoidType();}
+    ) GREATER_THAN
+    {$tp = new FptrType($args, $return);}
+    ;
 
 MAIN: 'main';
 RETURN: 'return';
