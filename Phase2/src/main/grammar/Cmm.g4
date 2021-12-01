@@ -27,7 +27,11 @@ program returns[Program programRet]:
 
 //todo
 main returns[MainDeclaration mainRet]:
-    MAIN LPAR RPAR body;
+    {$mainRet = new MainDeclaration();}
+    m=MAIN
+    {$mainRet.setLine($m.getLine());}
+    LPAR RPAR bd=body
+    {$mainRet.setBody($bd.stmt)};
 
 //todo
 structDeclaration returns[StructDeclaration structDeclarationRet]:
@@ -66,16 +70,33 @@ functionArguments :
     (expression (COMMA expression)*)?;
 
 //todo
-body :
-     (blockStatement | (NEWLINE+ singleStatement (SEMICOLON)?));
+body returns [Statement stmt]:
+     (
+     bs=blockStatement
+     {$stmt = $bs.stmt;}
+     | (NEWLINE+ ss=singleStatement
+     {$stmt = $ss.stmt;}
+     (SEMICOLON)?)
+     );
 
 //todo
-loopCondBody :
-     (blockStatement | (NEWLINE+ singleStatement ));
+loopCondBody returns [Statement stmt]:
+     (bs=blockStatement
+     {$stmt = $bs.stmt;}
+     | (NEWLINE+ ss=singleStatement
+     {$stmt = $ss.stmt;}
+     ));
 
 //todo
-blockStatement :
-    BEGIN (NEWLINE+ (singleStatement SEMICOLON)* singleStatement (SEMICOLON)?)+ NEWLINE+ END;
+blockStatement returns [BlockStmt stmt]:
+    {$stmt = new BlockStmt();}
+    bg=BEGIN
+    {$stmt.setLine($bg.getLine());}
+    (NEWLINE+ (st1=singleStatement
+    {$stmt.addStatement($st1.stmt);}
+    SEMICOLON)* st2=singleStatement
+    {$stmt.addStatement($st2.stmt);}
+    (SEMICOLON)?)+ NEWLINE+ END;
 
 //todo
 varDecStatement :
@@ -90,12 +111,22 @@ returnStatement :
     RETURN (expression)?;
 
 //todo
-ifStatement :
-    IF expression (loopCondBody | body elseStatement);
+ifStatement returns [ConditionalStmt stmt]:
+    if=IF cond=expression
+    {$stmt = new ConditionalStmt($cond.expr);
+     $stmt.setLine($if.getLine());}
+    (lpb=loopCondBody
+    {$stmt.setThenBody($lpb.stmt);}
+    | bd=body
+    {$stmt.setThenBody($bd.stmt);}
+    elstmt=elseStatement
+    {$stmt.setElseBody($elstmt.stmt);}
+    );
 
 //todo
-elseStatement :
-     NEWLINE* ELSE loopCondBody;
+elseStatement returns [Statement stmt]:
+     NEWLINE* ELSE lpb=loopCondBody
+     {$stmt = $lpb.stmt;};
 
 //todo
 loopStatement :
@@ -110,49 +141,126 @@ doWhileLoopStatement :
     DO body NEWLINE* WHILE expression;
 
 //todo
-displayStatement :
-  DISPLAY LPAR expression RPAR;
+displayStatement returns [DisplayStmt stmt]:
+  disp=DISPLAY
+  {$stmt = new DisplayStmt();}
+  LPAR expression RPAR;
 
 //todo
 assignmentStatement :
     orExpression ASSIGN expression;
 
 //todo
-singleStatement :
-    ifStatement | displayStatement | functionCallStmt | returnStatement | assignmentStatement
-    | varDecStatement | loopStatement | append | size;
+singleStatement returns [Statement stmt] :
+    ifstmt=ifStatement
+    {$stmt = $ifstmt.stmt}
+    | disstmt=displayStatement
+    {$stmt = $disstmt.stmt}
+    | fcstmt=functionCallStmt
+//    {$stmt = $fcstmt.stmt}
+    | retstmt=returnStatement
+//    {$stmt = $retstmt.stmt}
+    | asstmt=assignmentStatement
+//    {$stmt = $asstmt.stmt}
+    | varstmt=varDecStatement
+//    {$stmt = $varstmt.stmt}
+    | lstmt=loopStatement
+//    {$stmt = $lstmt.stmt}
+    | appstmt=append
+//    {$stmt = $appstmt.stmt}
+    | szstmt=size
+//    {$stmt = $szstmt.stmt}
+    ;
 
 //todo
-expression:
-    orExpression (op = ASSIGN expression )? ;
+expression returns [Expression expr]:
+    oe=orExpression
+    {$expr = $oe.expr;}
+    (op = ASSIGN ex=expression
+    {$expr = new BinaryExpression($expr, $ex.expr, BinaryOperator.assign);
+     $expr.setLine($op.getLine());}
+    )? ;
 
 //todo
-orExpression:
-    andExpression (op = OR andExpression )*;
+orExpression returns [Expression expr]:
+    an=andExpression
+    {$expr = $an.expr;}
+    (op = OR ex=andExpression
+    {$expr = new BinaryExpression($expr, $ex.expr, BinaryOperator.or);
+     $expr.setLine($op.getLine());}
+    )*;
 
 //todo
-andExpression:
-    equalityExpression (op = AND equalityExpression )*;
+andExpression returns [Expression expr]:
+    eq=equalityExpression
+    {$expr = $eq.expr;}
+    (op = AND ex=equalityExpression
+    {$expr = new BinaryExpression($expr, $ex.expr, BinaryOperator.and);
+         $expr.setLine($op.getLine());}
+    )*;
 
 //todo
-equalityExpression:
-    relationalExpression (op = EQUAL relationalExpression )*;
+equalityExpression returns [Expression expr]:
+    re=relationalExpression
+    {$expr = $re.expr;}
+    (op = EQUAL ex=relationalExpression
+    {$expr = new BinaryExpression($expr, $ex.expr, BinaryOperator.eq);
+     $expr.setLine($op.getLine());}
+    )*;
 
 //todo
-relationalExpression:
-    additiveExpression ((op = GREATER_THAN | op = LESS_THAN) additiveExpression )*;
+relationalExpression returns [Expression expr] locals [BinaryOperator _op]:
+    ad=additiveExpression
+    {$expr = $ad.expr;}
+    ((op = GREATER_THAN
+    {$_op = BinaryOperator.gt;}
+    | op = LESS_THAN
+    {$_op = BinaryOperator.lt;})
+    ex=additiveExpression
+    {$expr = new BinaryExpression($expr, $ex.expr, $_op);
+     $expr.setLine($op.getLine());}
+    )*;
 
 //todo
-additiveExpression:
-    multiplicativeExpression ((op = PLUS | op = MINUS) multiplicativeExpression )*;
+additiveExpression returns [Expression expr] locals [BinaryOperator _op]:
+    ml=multiplicativeExpression
+    {$expr = $ml.expr;}
+    ((op = PLUS
+    {$_op = BinaryOperator.add;}
+    | op = MINUS
+    {$_op = BinaryOperator.sub;})
+    ex=multiplicativeExpression
+    {$expr = new BinaryExpression($expr, $ex.expr, $_op);
+     $expr.setLine($op.getLine());}
+    )*;
 
 //todo
-multiplicativeExpression:
-    preUnaryExpression ((op = MULT | op = DIVIDE) preUnaryExpression )*;
+multiplicativeExpression returns [Expression expr] locals [BinaryOperator _op]:
+    pu=preUnaryExpression
+    {$expr = $pu.expr;}
+    ((op = MULT
+    {$_op = BinaryOperator.mult;}
+    | op = DIVIDE
+    {$_op = BinaryOperator.div;}
+    )
+    ex=preUnaryExpression
+    {$expr = new BinaryExpression($expr, $ex.expr, $_op);
+     $expr.setLine($op.getLine());}
+    )*;
 
 //todo
-preUnaryExpression:
-    ((op = NOT | op = MINUS) preUnaryExpression ) | accessExpression;
+preUnaryExpression returns [Expression expr] locals [UnaryOperator _op]:
+    ((op = NOT
+    {$_op = UnaryOperator.not}
+    | op = MINUS
+    {$_op = UnaryOperator.minus}
+    )
+    pu=preUnaryExpression
+    {$expr = new UnaryExpression($pu.expr, _op);
+     $expr.setLine($op.getLine());}
+    )
+    | ex=accessExpression
+    {$expr = $ex.expr;};
 
 //todo
 accessExpression:
