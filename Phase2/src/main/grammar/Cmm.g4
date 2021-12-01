@@ -33,35 +33,35 @@ main returns[MainDeclaration mainRet]:
     LPAR RPAR bd=body
     {$mainRet.setBody($bd.stmt)};
 
-//todo
+//todo R
 structDeclaration returns[StructDeclaration structDeclarationRet]:
     STRUCT identifier ((BEGIN structBody NEWLINE+ END) | (NEWLINE+ singleStatementStructBody SEMICOLON?)) NEWLINE+;
 
-//todo
+//todo R
 singleVarWithGetAndSet :
     type identifier functionArgsDec BEGIN NEWLINE+ setBody getBody END;
 
-//todo
+//todo R
 singleStatementStructBody :
     varDecStatement | singleVarWithGetAndSet;
 
-//todo
+//todo R
 structBody :
     (NEWLINE+ (singleStatementStructBody SEMICOLON)* singleStatementStructBody SEMICOLON?)+;
 
-//todo
+//todo R
 getBody :
     GET body NEWLINE+;
 
-//todo
+//todo R
 setBody :
     SET body NEWLINE+;
 
-//todo
+//todo R
 functionDeclaration returns[FunctionDeclaration functionDeclarationRet]:
     (type | VOID ) identifier functionArgsDec body NEWLINE+;
 
-//todo
+//todo R
 functionArgsDec :
     LPAR (type identifier (COMMA type identifier)*)? RPAR ;
 
@@ -108,7 +108,7 @@ blockStatement returns [BlockStmt stmt]:
 varDecStatement returns [VarDecStmt stmt] locals [VariableDeclaration var]:
     {$stmt = new varDecStatement();}
     t=type i=identifier
-    {$stmt.setLine($i.getLine());
+    {$stmt.setLine($i.expr.getLine());
      $var = new VariableDeclaration($i.expr, $t.tp);}
     (ASSIGN oe=orExpression
     {$var.setDefaultValue($oe.expr);}
@@ -312,7 +312,7 @@ preUnaryExpression returns [Expression expr] locals [UnaryOperator _op]:
     | ex=accessExpression
     {$expr = $ex.expr;};
 
-//todo
+//todo R
 accessExpression returns [Expression expr]:
     oe=otherExpression
     {$expr = $oe.expr;}
@@ -362,7 +362,7 @@ value returns [Value expr]:
 //todo
 boolValue returns [BoolValue expr]:
     a=TRUE | a=FALSE
-    {$expr = new BoolValue($a.val);
+    {$expr = new BoolValue($a);
      $expr.setLine($a.getLine());}
     ;
 
