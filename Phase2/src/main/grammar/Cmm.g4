@@ -66,8 +66,14 @@ functionArgsDec :
     LPAR (type identifier (COMMA type identifier)*)? RPAR ;
 
 //todo
-functionArguments :
-    (expression (COMMA expression)*)?;
+functionArguments returns [ExprInPar expr] locals [ArrayList<Expression> inputs]:
+    {$inputs = new ArrayList<Expression>();}
+    (ex1=expression
+    {$inputs.add($ex1.expr);}
+    (COMMA ex2=expression
+    {$inputs.add($ex2.expr);}
+    )*)?
+    {$expr = new ExprInPar($inputs);};
 
 //todo
 body returns [Statement stmt]:
@@ -117,12 +123,26 @@ varDecStatement returns [VarDecStmt stmt] locals [VariableDeclaration var]:
     )*;
 
 //todo
-functionCallStmt :
-     otherExpression ((LPAR functionArguments RPAR) | (DOT identifier))* (LPAR functionArguments RPAR);
+functionCallStmt returns [FunctionCallStmt stmt] locals [FunctionCall fcall, Expression instance]:
+     oe=otherExpression
+     {$instance = $oe.expr;}
+     ((LPAR fargs=functionArguments
+     {$instance = new FunctionCall($instance, $fargs.expr);}
+     RPAR) | (DOT sacc=identifier
+     {$instance = new StructAccess($instance, $sacc.expr);}
+     ))*
+     (lp=LPAR fargs=functionArguments RPAR)
+     {$stmt = new FunctionCallStmt($instance, $fargs.expr);
+      $stmt.setLine($lp.getLine())};
 
 //todo
-returnStatement :
-    RETURN (expression)?;
+returnStatement returns [ReturnStmt stmt]:
+    {$stmt = new ReturnStmt();}
+    ret = RETURN
+    {$stmt.setLine($ret.getLine());}
+    (ex=expression
+    {$stmt.setReturnedExpr($ex.expr);}
+    )?;
 
 //todo
 ifStatement returns [ConditionalStmt stmt]:
@@ -143,26 +163,42 @@ elseStatement returns [Statement stmt]:
      {$stmt = $lpb.stmt;};
 
 //todo
-loopStatement :
-    whileLoopStatement | doWhileLoopStatement;
+loopStatement returns [LoopStmt stmt]:
+    wl=whileLoopStatement
+    {$stmt = $wl.stmt;}
+    | dl=doWhileLoopStatement
+    {$stmt = $dl.stmt;}
+    ;
 
 //todo
-whileLoopStatement :
-    WHILE expression loopCondBody;
+whileLoopStatement returns [LoopStmt stmt]:
+    w=WHILE cond=expression bod=loopCondBody
+    {$stmt = new LoopStmt();
+     $stmt.setLine($w.getLine());
+     $stmt.setCondition($cond.expr);
+     $stmt.setBody($bod.stmt);
+     };
 
 //todo
-doWhileLoopStatement :
-    DO body NEWLINE* WHILE expression;
+doWhileLoopStatement returns [LoopStmt stmt]:
+    d=DO bod=body NEWLINE* WHILE cond=expression
+    {$stmt = new LoopStmt();
+     $stmt.setLine($d.getLine());
+     $stmt.setCondition($cond.expr);
+     $stmt.setBody($bod.stmt);
+     };
 
 //todo
 displayStatement returns [DisplayStmt stmt]:
-  disp=DISPLAY
-  {$stmt = new DisplayStmt();}
-  LPAR expression RPAR;
+  disp=DISPLAY LPAR arg=expression RPAR
+  {$stmt = new DisplayStmt($arg.expr);
+   $stmt.setLine($disp.getLine());};
 
 //todo
-assignmentStatement :
-    orExpression ASSIGN expression;
+assignmentStatement returns [AssignmentStmt stmt]:
+    lval=orExpression ass=ASSIGN rval=expression
+    {$stmt = new AssignmentStmt($lval.expr, $rval.expr);
+     $stmt.setLine($ass.getLine());};
 
 //todo
 singleStatement returns [Statement stmt] :
@@ -171,19 +207,19 @@ singleStatement returns [Statement stmt] :
     | disstmt=displayStatement
     {$stmt = $disstmt.stmt}
     | fcstmt=functionCallStmt
-//    {$stmt = $fcstmt.stmt}
+    {$stmt = $fcstmt.stmt}
     | retstmt=returnStatement
-//    {$stmt = $retstmt.stmt}
+    {$stmt = $retstmt.stmt}
     | asstmt=assignmentStatement
-//    {$stmt = $asstmt.stmt}
+    {$stmt = $asstmt.stmt}
     | varstmt=varDecStatement
-//    {$stmt = $varstmt.stmt}
+    {$stmt = $varstmt.stmt}
     | lstmt=loopStatement
-//    {$stmt = $lstmt.stmt}
+    {$stmt = $lstmt.stmt}
     | appstmt=append
-//    {$stmt = $appstmt.stmt}
+    {$stmt = new ListAppendStmt($appstmt.expr);}
     | szstmt=size
-//    {$stmt = $szstmt.stmt}
+    {$stmt = new ListSizeStmt($szstmt.expr);}
     ;
 
 //todo
