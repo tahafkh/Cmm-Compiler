@@ -31,7 +31,7 @@ main returns[MainDeclaration mainRet]:
     m=MAIN
     {$mainRet.setLine($m.getLine());}
     LPAR RPAR bd=body
-    {$mainRet.setBody($bd.stmt)};
+    {$mainRet.setBody($bd.stmt);};
 
 //todo
 structDeclaration returns[StructDeclaration structDeclarationRet] locals [Statement _body]:
@@ -162,7 +162,7 @@ blockStatement returns [BlockStmt stmt]:
 
 //todo
 varDecStatement returns [VarDecStmt stmt] locals [VariableDeclaration var]:
-    {$stmt = new varDecStatement();}
+    {$stmt = new VarDecStmt();}
     t=type i=identifier
     {$stmt.setLine($i.expr.getLine());
      $var = new VariableDeclaration($i.expr, $t.tp);}
@@ -183,18 +183,18 @@ functionCallStmt returns [FunctionCallStmt stmt] locals [FunctionCall fcall, Exp
      oe=otherExpression
      {$instance = $oe.expr;}
      ((lp=LPAR fargs=functionArguments
-     {$instance = new FunctionCall($instance, $fargs.expr);
-      $instance.setLine(lp.getLine());
+     {$instance = new FunctionCall($instance, $fargs.expr.getInputs());
+      $instance.setLine($lp.getLine());
      }
      RPAR) | (d=DOT sacc=identifier
      {$instance = new StructAccess($instance, $sacc.expr);
-      $instance.setLine(d.getLine());}
+      $instance.setLine($d.getLine());}
      ))*
      (lp=LPAR fargs=functionArguments RPAR)
-     {$fcall = new FunctionCall($instance, $fargs.expr);
+     {$fcall = new FunctionCall($instance, $fargs.expr.getInputs());
       $fcall.setLine($lp.getLine());
       $stmt = new FunctionCallStmt($fcall);
-      $stmt.setLine($lp.getLine())};
+      $stmt.setLine($lp.getLine());};
 
 //todo
 returnStatement returns [ReturnStmt stmt]:
@@ -264,19 +264,19 @@ assignmentStatement returns [AssignmentStmt stmt]:
 //todo
 singleStatement returns [Statement stmt] :
     ifstmt=ifStatement
-    {$stmt = $ifstmt.stmt}
+    {$stmt = $ifstmt.stmt;}
     | disstmt=displayStatement
-    {$stmt = $disstmt.stmt}
+    {$stmt = $disstmt.stmt;}
     | fcstmt=functionCallStmt
-    {$stmt = $fcstmt.stmt}
+    {$stmt = $fcstmt.stmt;}
     | retstmt=returnStatement
-    {$stmt = $retstmt.stmt}
+    {$stmt = $retstmt.stmt;}
     | asstmt=assignmentStatement
-    {$stmt = $asstmt.stmt}
+    {$stmt = $asstmt.stmt;}
     | varstmt=varDecStatement
-    {$stmt = $varstmt.stmt}
+    {$stmt = $varstmt.stmt;}
     | lstmt=loopStatement
-    {$stmt = $lstmt.stmt}
+    {$stmt = $lstmt.stmt;}
     | appstmt=append
     {$stmt = new ListAppendStmt($appstmt.expr);}
     | szstmt=size
@@ -367,7 +367,7 @@ preUnaryExpression returns [Expression expr] locals [UnaryOperator _op]:
     {$_op = UnaryOperator.minus;}
     )
     pu=preUnaryExpression
-    {$expr = new UnaryExpression($pu.expr, _op);
+    {$expr = new UnaryExpression($pu.expr, $_op);
      $expr.setLine($op.getLine());}
     )
     | ex=accessExpression
@@ -378,19 +378,19 @@ accessExpression returns [Expression expr]:
     oe=otherExpression
     {$expr = $oe.expr;}
     ((lp=LPAR fargs=functionArguments RPAR)
-    {$expr = new FunctionCall($expr, $fargs.expr);
-    $expr.setLine(lp.getLine());
+    {$expr = new FunctionCall($expr, $fargs.expr.getInputs());
+    $expr.setLine($lp.getLine());
     }
     | (d=DOT sacc=identifier
     {$expr = new StructAccess($expr, $sacc.expr);
-     $expr.setLine(d.getLine());}
+     $expr.setLine($d.getLine());}
     ))*
     ((lb=LBRACK e=expression
      {$expr = new ListAccessByIndex($expr, $e.expr);
-      $expr.setLine(lb.getLine());}
+      $expr.setLine($lb.getLine());}
      RBRACK) | (d=DOT sacc=identifier
      {$expr = new StructAccess($expr, $sacc.expr);
-      $expr.setLine(d.getLine());}
+      $expr.setLine($d.getLine());}
      ))*;
 
 //todo
@@ -435,9 +435,12 @@ value returns [Value expr]:
 
 //todo
 boolValue returns [BoolValue expr]:
-    a=TRUE | a=FALSE
-    {$expr = new BoolValue($a);
-     $expr.setLine($a.getLine());}
+    t=TRUE
+    {$expr = new BoolValue(true);
+     $expr.setLine($t.getLine());}
+    | f=FALSE
+    {$expr = new BoolValue(false);
+     $expr.setLine($f.getLine());}
     ;
 
 //todo
@@ -455,9 +458,9 @@ type returns [Type tp]:
     | BOOL
     {$tp = new BoolType();}
     | LIST SHARP t=type
-    {$tp = ListType($t.tp);}
+    {$tp = new ListType($t.tp);}
     | STRUCT i=identifier
-    {$tp = StructType($i.expr);}
+    {$tp = new StructType($i.expr);}
     | f=fptrType
     {$tp = $f.tp;}
     ;
@@ -465,7 +468,7 @@ type returns [Type tp]:
 //todo
 fptrType returns [FptrType tp] locals [ArrayList<Type> args, Type _return]:
     FPTR
-    {$args = new ArrayList<Type>;}
+    {$args = new ArrayList<Type>();}
     LESS_THAN (VOID
     {$args.add(new VoidType());}
     | (t=type

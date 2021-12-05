@@ -16,6 +16,24 @@ struct s1 begin
     end
 end
 
+struct s2 begin
+    int a, b = 2;
+    int c (bool arg1, bool arg2) begin
+        set
+            if arg1 & a > b
+                a = a - b
+             else
+                a = a + b
+        get
+            return a * b + a
+    end; int d () begin
+    set
+    return 2
+    get
+    return 4
+    end
+end
+
 void f1(list #int myList) begin
     int i = 0
     do begin
