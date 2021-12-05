@@ -35,18 +35,20 @@ main returns[MainDeclaration mainRet]:
 
 //todo
 structDeclaration returns[StructDeclaration structDeclarationRet] locals [Statement _body]:
-    s=STRUCT i=identifier
-    {$structDeclarationRet = new StructDeclaration();
-     $structDeclarationRet.setLine($s.getLine());
-     $structDeclarationRet.setStructName($i.expr);
-    }
+    {$structDeclarationRet = new StructDeclaration();}
+    s=STRUCT
+    {$structDeclarationRet.setLine($s.getLine());}
+     i=identifier
+    {$structDeclarationRet.setStructName($i.expr);}
     ((b=BEGIN sb=structBody
      {$sb.stmt.setLine($b.getLine());
      $_body = $sb.stmt;
      }
      NEWLINE+ END) | (NEWLINE+ sssb=singleStatementStructBody
      {$_body = $sssb.stmt;}
-     SEMICOLON?)) NEWLINE+;
+     SEMICOLON?)) NEWLINE+
+     {$structDeclarationRet.setBody($_body);}
+     ;
 
 //todo
 singleVarWithGetAndSet returns [SetGetVarDeclaration stmt]:
@@ -205,9 +207,9 @@ returnStatement returns [ReturnStmt stmt]:
 
 //todo
 ifStatement returns [ConditionalStmt stmt]:
-    if=IF cond=expression
+    f=IF cond=expression
     {$stmt = new ConditionalStmt($cond.expr);
-     $stmt.setLine($if.getLine());}
+     $stmt.setLine($f.getLine());}
     (lpb=loopCondBody
     {$stmt.setThenBody($lpb.stmt);}
     | bd=body
