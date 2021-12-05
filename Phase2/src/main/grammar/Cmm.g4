@@ -33,37 +33,91 @@ main returns[MainDeclaration mainRet]:
     LPAR RPAR bd=body
     {$mainRet.setBody($bd.stmt)};
 
-//todo R
-structDeclaration returns[StructDeclaration structDeclarationRet]:
-    STRUCT identifier ((BEGIN structBody NEWLINE+ END) | (NEWLINE+ singleStatementStructBody SEMICOLON?)) NEWLINE+;
+//todo
+structDeclaration returns[StructDeclaration structDeclarationRet] locals [Statement _body]:
+    s=STRUCT i=identifier
+    {$structDeclarationRet = new StructDeclaration();
+     $structDeclarationRet.setLine($s.getLine());
+     $structDeclarationRet.setStructName($i.expr);
+    }
+    ((b=BEGIN sb=structBody
+     {$sb.stmt.setLine($b.getLine());
+     $_body = $sb.stmt;
+     }
+     NEWLINE+ END) | (NEWLINE+ sssb=singleStatementStructBody
+     {$_body = $sssb.stmt;}
+     SEMICOLON?)) NEWLINE+;
 
-//todo R
-singleVarWithGetAndSet :
-    type identifier functionArgsDec BEGIN NEWLINE+ setBody getBody END;
+//todo
+singleVarWithGetAndSet returns [SetGetVarDeclaration stmt]:
+    {$stmt = new SetGetVarDeclaration();}
+    t=type i=identifier fad=functionArgsDec
+    {$stmt.setVarType($t.tp);
+     $stmt.setVarName($i.expr);
+     $stmt.setLine($i.expr.getLine());
+     $stmt.setArgs($fad.args);
+    }
+    BEGIN NEWLINE+ sb=setBody
+    {$stmt.setSetterBody($sb.stmt);}
+    gb=getBody
+    {$stmt.setGetterBody($gb.stmt);}
+    END;
 
-//todo R
-singleStatementStructBody :
-    varDecStatement | singleVarWithGetAndSet;
+//todo
+singleStatementStructBody returns [Statement stmt]:
+    vds=varDecStatement
+    {$stmt = $vds.stmt;}
+    | sv=singleVarWithGetAndSet
+    {$stmt = $sv.stmt;}
+    ;
 
-//todo R
-structBody :
-    (NEWLINE+ (singleStatementStructBody SEMICOLON)* singleStatementStructBody SEMICOLON?)+;
+//todo
+structBody returns[BlockStmt stmt]:
+    {$stmt = new BlockStmt();}
+    (NEWLINE+ (sssb=singleStatementStructBody
+     {$stmt.addStatement($sssb.stmt);}
+     SEMICOLON)* sssb=singleStatementStructBody
+     {$stmt.addStatement($sssb.stmt);}
+      SEMICOLON?)+;
 
-//todo R
-getBody :
-    GET body NEWLINE+;
+//todo
+getBody returns[Statement stmt]:
+    GET bd=body
+    {$stmt = $bd.stmt;}
+    NEWLINE+;
 
-//todo R
-setBody :
-    SET body NEWLINE+;
+//todo
+setBody returns[Statement stmt]:
+    SET bd=body
+    {$stmt = $bd.stmt;}
+    NEWLINE+;
 
-//todo R
-functionDeclaration returns[FunctionDeclaration functionDeclarationRet]:
-    (type | VOID ) identifier functionArgsDec body NEWLINE+;
+//todo
+functionDeclaration returns[FunctionDeclaration functionDeclarationRet] locals [Type _return]:
+    (t=type
+    {$_return = $t.tp;}
+    | VOID
+    {$_return = new VoidType();}
+    ) i=identifier
+    {$functionDeclarationRet = new FunctionDeclaration();
+     $functionDeclarationRet.setLine($i.expr.getLine());
+     $functionDeclarationRet.setReturnType($_return);
+     $functionDeclarationRet.setFunctionName($i.expr);
+    }
+    fad=functionArgsDec
+    {$functionDeclarationRet.setArgs($fad.args);}
+    bd=body
+    {$functionDeclarationRet.setBody($bd.stmt);}
+    NEWLINE+;
 
-//todo R
-functionArgsDec :
-    LPAR (type identifier (COMMA type identifier)*)? RPAR ;
+//todo
+functionArgsDec returns [ArrayList<VariableDeclaration> args]:
+    {$args = new ArrayList<VariableDeclaration>();}
+    LPAR (t=type i=identifier
+    {$args.add(new VariableDeclaration($i.expr, $t.tp));}
+    (COMMA t=type i=identifier
+    {$args.add(new VariableDeclaration($i.expr, $t.tp));}
+    )*)? RPAR ;
 
 //todo
 functionArguments returns [ExprInPar expr] locals [ArrayList<Expression> inputs]:
@@ -126,13 +180,18 @@ varDecStatement returns [VarDecStmt stmt] locals [VariableDeclaration var]:
 functionCallStmt returns [FunctionCallStmt stmt] locals [FunctionCall fcall, Expression instance]:
      oe=otherExpression
      {$instance = $oe.expr;}
-     ((LPAR fargs=functionArguments
-     {$instance = new FunctionCall($instance, $fargs.expr);}
-     RPAR) | (DOT sacc=identifier
-     {$instance = new StructAccess($instance, $sacc.expr);}
+     ((lp=LPAR fargs=functionArguments
+     {$instance = new FunctionCall($instance, $fargs.expr);
+      $instance.setLine(lp.getLine());
+     }
+     RPAR) | (d=DOT sacc=identifier
+     {$instance = new StructAccess($instance, $sacc.expr);
+      $instance.setLine(d.getLine());}
      ))*
      (lp=LPAR fargs=functionArguments RPAR)
-     {$stmt = new FunctionCallStmt($instance, $fargs.expr);
+     {$fcall = new FunctionCall($instance, $fargs.expr);
+      $fcall.setLine($lp.getLine());
+      $stmt = new FunctionCallStmt($fcall);
       $stmt.setLine($lp.getLine())};
 
 //todo
@@ -312,12 +371,25 @@ preUnaryExpression returns [Expression expr] locals [UnaryOperator _op]:
     | ex=accessExpression
     {$expr = $ex.expr;};
 
-//todo R
+//todo
 accessExpression returns [Expression expr]:
     oe=otherExpression
     {$expr = $oe.expr;}
-    ((LPAR f=functionArguments RPAR)
-    | (DOT identifier))*  ((LBRACK expression RBRACK) | (DOT identifier))*;
+    ((lp=LPAR fargs=functionArguments RPAR)
+    {$expr = new FunctionCall($expr, $fargs.expr);
+    $expr.setLine(lp.getLine());
+    }
+    | (d=DOT sacc=identifier
+    {$expr = new StructAccess($expr, $sacc.expr);
+     $expr.setLine(d.getLine());}
+    ))*
+    ((lb=LBRACK e=expression
+     {$expr = new ListAccessByIndex($expr, $e.expr);
+      $expr.setLine(lb.getLine());}
+     RBRACK) | (d=DOT sacc=identifier
+     {$expr = new StructAccess($expr, $sacc.expr);
+      $expr.setLine(d.getLine());}
+     ))*;
 
 //todo
 otherExpression returns [Expression expr]:
@@ -389,7 +461,7 @@ type returns [Type tp]:
     ;
 
 //todo
-fptrType returns [FptrType tp] locals [ArrayList<Type> args, Type return]:
+fptrType returns [FptrType tp] locals [ArrayList<Type> args, Type _return]:
     FPTR
     {$args = new ArrayList<Type>;}
     LESS_THAN (VOID
@@ -399,12 +471,12 @@ fptrType returns [FptrType tp] locals [ArrayList<Type> args, Type return]:
     (COMMA t=type
     {$args.add($t.tp);}
     )*)) ARROW (t=type
-    {$return = $t.tp;}
+    {$_return = $t.tp;}
     |
     VOID
-    {$return = new VoidType();}
+    {$_return = new VoidType();}
     ) GREATER_THAN
-    {$tp = new FptrType($args, $return);}
+    {$tp = new FptrType($args, $_return);}
     ;
 
 MAIN: 'main';
