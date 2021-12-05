@@ -113,12 +113,16 @@ functionDeclaration returns[FunctionDeclaration functionDeclarationRet] locals [
     NEWLINE+;
 
 //todo
-functionArgsDec returns [ArrayList<VariableDeclaration> args]:
+functionArgsDec returns [ArrayList<VariableDeclaration> args] locals [VariableDeclaration vdec]:
     {$args = new ArrayList<VariableDeclaration>();}
     LPAR (t=type i=identifier
-    {$args.add(new VariableDeclaration($i.expr, $t.tp));}
+    {$vdec = new VariableDeclaration($i.expr, $t.tp);
+     $vdec.setLine($i.expr.getLine());
+     $args.add($vdec);}
     (COMMA t=type i=identifier
-    {$args.add(new VariableDeclaration($i.expr, $t.tp));}
+    {$vdec = new VariableDeclaration($i.expr, $t.tp);
+     $vdec.setLine($i.expr.getLine());
+     $args.add($vdec);}
     )*)? RPAR ;
 
 //todo
@@ -165,13 +169,15 @@ varDecStatement returns [VarDecStmt stmt] locals [VariableDeclaration var]:
     {$stmt = new VarDecStmt();}
     t=type i=identifier
     {$stmt.setLine($i.expr.getLine());
-     $var = new VariableDeclaration($i.expr, $t.tp);}
+     $var = new VariableDeclaration($i.expr, $t.tp);
+     $var.setLine($i.expr.getLine());}
     (ASSIGN oe=orExpression
     {$var.setDefaultValue($oe.expr);}
     )?
     {$stmt.addVar($var);}
     (COMMA i=identifier
-    {$var = new VariableDeclaration($i.expr, $t.tp);}
+    {$var = new VariableDeclaration($i.expr, $t.tp);
+    $var.setLine($i.expr.getLine());}
     (ASSIGN oe=orExpression
     {$var.setDefaultValue($oe.expr);}
     )?
@@ -278,9 +284,11 @@ singleStatement returns [Statement stmt] :
     | lstmt=loopStatement
     {$stmt = $lstmt.stmt;}
     | appstmt=append
-    {$stmt = new ListAppendStmt($appstmt.expr);}
+    {$stmt = new ListAppendStmt($appstmt.expr);
+     $stmt.setLine($appstmt.expr.getLine());}
     | szstmt=size
-    {$stmt = new ListSizeStmt($szstmt.expr);}
+    {$stmt = new ListSizeStmt($szstmt.expr);
+     $stmt.setLine($szstmt.expr.getLine());}
     ;
 
 //todo
@@ -307,7 +315,7 @@ andExpression returns [Expression expr]:
     {$expr = $eq.expr;}
     (op = AND ex=equalityExpression
     {$expr = new BinaryExpression($expr, $ex.expr, BinaryOperator.and);
-         $expr.setLine($op.getLine());}
+     $expr.setLine($op.getLine());}
     )*;
 
 //todo

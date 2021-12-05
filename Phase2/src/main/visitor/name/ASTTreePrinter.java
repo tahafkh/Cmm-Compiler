@@ -47,7 +47,8 @@ public class ASTTreePrinter extends Visitor<Void> {
     public Void visit(VariableDeclaration variableDec) {
         messagePrinter(variableDec.getLine(), variableDec.toString());
         variableDec.getVarName().accept(this);
-        variableDec.getDefaultValue().accept(this);
+        if (variableDec.getDefaultValue() != null)
+            variableDec.getDefaultValue().accept(this);
         return null;
     }
 

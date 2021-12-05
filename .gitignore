@@ -1,6 +1,7 @@
 #intellij configurations
 .idea/
 Phase2/Phase2.iml
+Phase2/src/parsers
 antlr-4.9.2-complete.jar
 out/
 gen/
