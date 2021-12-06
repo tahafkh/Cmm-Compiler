@@ -6,6 +6,7 @@ import main.ast.nodes.declaration.struct.*;
 import main.ast.nodes.expression.*;
 import main.ast.nodes.expression.values.primitive.*;
 import main.ast.nodes.statement.*;
+import main.ast.types.StructType;
 import main.compileError.CompileError;
 import main.compileError.nameError.*;
 import main.visitor.*;
@@ -14,12 +15,18 @@ import main.symbolTable.exceptions.*;
 import main.symbolTable.items.*;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Objects;
 
 public class NameAnalyzer  extends Visitor<Void> {
     public boolean hasError() { return !errors.isEmpty(); }
+    private boolean inStruct = false;
+    private StructDeclaration curr_struct = null;
+    private HashMap<StructDeclaration, ArrayList<String> > struct_dependency =
+            new HashMap<>();
     private ArrayList<CompileError> errors;
 
-    private void errorPrinter() {
+    private void printErrors() {
         for (CompileError exception: errors)
             System.out.println(exception.getMessage());
     }
@@ -40,10 +47,12 @@ public class NameAnalyzer  extends Visitor<Void> {
             } catch (ItemAlreadyExistsException ex) {
                 DuplicateStruct exception = new DuplicateStruct(structDeclaration.getLine(), structDeclaration.getStructName().getName());
                 program.addError(exception);
-                structDeclaration.accept(this);
             }
             SymbolTable.push(structSymbolTable);
+            structDeclaration.accept(this);
         }
+
+        ArrayList<StructDeclaration> structs = new ArrayList<StructDeclaration>(struct_dependency.keySet());
 
         for (FunctionDeclaration functionDeclaration:program.getFunctions()) {
             SymbolTable newSymbolTable = new SymbolTable();
@@ -53,25 +62,28 @@ public class NameAnalyzer  extends Visitor<Void> {
                 SymbolTable.root.getItem(StructSymbolTableItem.START_KEY + functionDeclaration.getFunctionName().getName());
                 FunctionStructConflict exception = new FunctionStructConflict(functionDeclaration.getLine(), functionDeclaration.getFunctionName().getName());
                 program.addError(exception);
-            } catch (ItemNotFoundException ignored){}
+            } catch (ItemNotFoundException ignored) {}
             try{
                 root.put(newSymbolTableItem);
-            } catch (ItemAlreadyExistsException ex) {
+            } catch (ItemAlreadyExistsException e) {
                 DuplicateFunction exception = new DuplicateFunction(functionDeclaration.getLine(), functionDeclaration.getFunctionName().getName());
                 program.addError(exception);
-                functionDeclaration.accept(this);
             }
             SymbolTable.push(newSymbolTable);
+            functionDeclaration.accept(this);
         }
 
         program.getMain().accept(this);
+
         errors.addAll(program.flushErrors());
+        printErrors();
         return null;
     }
 
     @Override
     public Void visit(FunctionDeclaration functionDec) {
         functionDec.getFunctionName().accept(this);
+
         for (VariableDeclaration var: functionDec.getArgs()) {
             VariableSymbolTableItem varSymbol = new VariableSymbolTableItem(var.getVarName());
             try {
@@ -84,12 +96,15 @@ public class NameAnalyzer  extends Visitor<Void> {
                 SymbolTable.root.getItem(FunctionSymbolTableItem.START_KEY + var.getVarName().getName());
                 VarFunctionConflict exception = new VarFunctionConflict(var.getLine(), var.getVarName().getName());
                 functionDec.addError(exception);
-            } catch (ItemNotFoundException e) {
-                e.printStackTrace();
-            }
+            } catch (ItemNotFoundException ignored) {}
+            try{
+                SymbolTable.root.getItem(StructSymbolTableItem.START_KEY + var.getVarName().getName());
+                VarStructConflict exception = new VarStructConflict(var.getLine(), var.getVarName().getName());
+                functionDec.addError(exception);
+            } catch (ItemNotFoundException ignored) {}
         }
         functionDec.getBody().accept(this);
-
+        errors.addAll(functionDec.flushErrors());
         return null;
     }
 
@@ -98,29 +113,76 @@ public class NameAnalyzer  extends Visitor<Void> {
         mainDec.getBody().accept(this);
         return null;
     }
-    //todo
+
     @Override
     public Void visit(VariableDeclaration variableDec) {
-        variableDec.getVarName().accept(this);
+        if (inStruct && variableDec.getVarType().toString().length() >=11 && Objects.equals(variableDec.getVarType().toString().substring(0,10), "StructType"))
+            struct_dependency.computeIfAbsent(curr_struct, k -> new ArrayList<>()).add(variableDec.getVarName().getName());
+
+        VariableSymbolTableItem varSymbol = new VariableSymbolTableItem(variableDec.getVarName());
+        try {
+            SymbolTable.top.getItem(VariableSymbolTableItem.START_KEY + variableDec.getVarName().getName());
+            DuplicateVar exception = new DuplicateVar(variableDec.getLine(), variableDec.getVarName().getName());
+            variableDec.addError(exception);
+        } catch (ItemNotFoundException e) {
+            try {
+                SymbolTable.top.put(varSymbol);
+            } catch (ItemAlreadyExistsException ignored) {}
+        }
+        try{
+            SymbolTable.root.getItem(FunctionSymbolTableItem.START_KEY + variableDec.getVarName().getName());
+            VarFunctionConflict exception = new VarFunctionConflict(variableDec.getLine(), variableDec.getVarName().getName());
+            variableDec.addError(exception);
+        } catch (ItemNotFoundException ignored) {}
+        try{
+            SymbolTable.root.getItem(StructSymbolTableItem.START_KEY + variableDec.getVarName().getName());
+            VarStructConflict exception = new VarStructConflict(variableDec.getLine(), variableDec.getVarName().getName());
+            variableDec.addError(exception);
+        } catch (ItemNotFoundException ignored) {}
+
         if (variableDec.getDefaultValue() != null)
             variableDec.getDefaultValue().accept(this);
+        errors.addAll(variableDec.flushErrors());
         return null;
     }
 
     @Override
     public Void visit(StructDeclaration structDec) {
         structDec.getStructName().accept(this);
+        inStruct = true;
+        curr_struct = structDec;
         structDec.getBody().accept(this);
+        inStruct = false;
         return null;
     }
 
     @Override
     public Void visit(SetGetVarDeclaration setGetVarDec) {
-        setGetVarDec.getVarName().accept(this);
+        VariableSymbolTableItem varSymbol = new VariableSymbolTableItem(setGetVarDec.getVarName());
+        try {
+            SymbolTable.top.put(varSymbol);
+        } catch (ItemAlreadyExistsException e) {
+            DuplicateVar exception = new DuplicateVar(setGetVarDec.getLine(), setGetVarDec.getVarName().getName());
+            setGetVarDec.addError(exception);
+        }
+        try{
+            SymbolTable.root.getItem(FunctionSymbolTableItem.START_KEY + setGetVarDec.getVarName().getName());
+            VarFunctionConflict exception = new VarFunctionConflict(setGetVarDec.getLine(), setGetVarDec.getVarName().getName());
+            setGetVarDec.addError(exception);
+        } catch (ItemNotFoundException ignored) {}
+        try{
+            SymbolTable.root.getItem(StructSymbolTableItem.START_KEY + setGetVarDec.getVarName().getName());
+            VarStructConflict exception = new VarStructConflict(setGetVarDec.getLine(), setGetVarDec.getVarName().getName());
+            setGetVarDec.addError(exception);
+        } catch (ItemNotFoundException ignored) {}
+
         for (VariableDeclaration var: setGetVarDec.getArgs())
             var.accept(this);
-        setGetVarDec.getSetterBody().accept(this);
-        setGetVarDec.getGetterBody().accept(this);
+
+        errors.addAll(setGetVarDec.flushErrors());
+
+//        setGetVarDec.getSetterBody().accept(this);
+//        setGetVarDec.getGetterBody().accept(this);
         return null;
     }
 
@@ -140,9 +202,15 @@ public class NameAnalyzer  extends Visitor<Void> {
 
     @Override
     public Void visit(ConditionalStmt conditionalStmt) {
+        SymbolTable then = new SymbolTable(SymbolTable.top);
+        SymbolTable.push(then);
         conditionalStmt.getCondition().accept(this);
         conditionalStmt.getThenBody().accept(this);
+        SymbolTable.pop();
+        SymbolTable _else = new SymbolTable(SymbolTable.top);
+        SymbolTable.push(_else);
         conditionalStmt.getElseBody().accept(this);
+        SymbolTable.pop();
         return null;
     }
 
@@ -166,8 +234,11 @@ public class NameAnalyzer  extends Visitor<Void> {
 
     @Override
     public Void visit(LoopStmt loopStmt) {
+        SymbolTable loop = new SymbolTable(SymbolTable.top);
+        SymbolTable.push(loop);
         loopStmt.getCondition().accept(this);
         loopStmt.getBody().accept(this);
+        SymbolTable.pop();
         return null;
     }
 
@@ -212,7 +283,7 @@ public class NameAnalyzer  extends Visitor<Void> {
     }
 
     @Override
-    public Void visit(Identifier identifier) {
+    public Void visit(Identifier identifier) { //todo?
         return null;
     }
 
