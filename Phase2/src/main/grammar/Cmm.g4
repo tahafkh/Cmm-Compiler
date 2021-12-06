@@ -25,7 +25,6 @@ program returns[Program programRet]:
     (f = functionDeclaration {$programRet.addFunction($f.functionDeclarationRet);})*
     m = main {$programRet.setMain($m.mainRet);};
 
-//todo
 main returns[MainDeclaration mainRet]:
     {$mainRet = new MainDeclaration();}
     m=MAIN
@@ -33,7 +32,6 @@ main returns[MainDeclaration mainRet]:
     LPAR RPAR bd=body
     {$mainRet.setBody($bd.stmt);};
 
-//todo
 structDeclaration returns[StructDeclaration structDeclarationRet] locals [Statement _body]:
     {$structDeclarationRet = new StructDeclaration();}
     s=STRUCT
@@ -50,7 +48,6 @@ structDeclaration returns[StructDeclaration structDeclarationRet] locals [Statem
      {$structDeclarationRet.setBody($_body);}
      ;
 
-//todo
 singleVarWithGetAndSet returns [SetGetVarDeclaration stmt]:
     {$stmt = new SetGetVarDeclaration();}
     t=type i=identifier fad=functionArgsDec
@@ -65,7 +62,6 @@ singleVarWithGetAndSet returns [SetGetVarDeclaration stmt]:
     {$stmt.setGetterBody($gb.stmt);}
     END;
 
-//todo
 singleStatementStructBody returns [Statement stmt]:
     vds=varDecStatement
     {$stmt = $vds.stmt;}
@@ -73,7 +69,6 @@ singleStatementStructBody returns [Statement stmt]:
     {$stmt = $sv.stmt;}
     ;
 
-//todo
 structBody returns[BlockStmt stmt]:
     {$stmt = new BlockStmt();}
     (NEWLINE+ (sssb=singleStatementStructBody
@@ -82,19 +77,16 @@ structBody returns[BlockStmt stmt]:
      {$stmt.addStatement($sssb.stmt);}
       SEMICOLON?)+;
 
-//todo
 getBody returns[Statement stmt]:
     GET bd=body
     {$stmt = $bd.stmt;}
     NEWLINE+;
 
-//todo
 setBody returns[Statement stmt]:
     SET bd=body
     {$stmt = $bd.stmt;}
     NEWLINE+;
 
-//todo
 functionDeclaration returns[FunctionDeclaration functionDeclarationRet] locals [Type _return]:
     (t=type
     {$_return = $t.tp;}
@@ -112,7 +104,6 @@ functionDeclaration returns[FunctionDeclaration functionDeclarationRet] locals [
     {$functionDeclarationRet.setBody($bd.stmt);}
     NEWLINE+;
 
-//todo
 functionArgsDec returns [ArrayList<VariableDeclaration> args] locals [VariableDeclaration vdec]:
     {$args = new ArrayList<VariableDeclaration>();}
     LPAR (t=type i=identifier
@@ -125,7 +116,6 @@ functionArgsDec returns [ArrayList<VariableDeclaration> args] locals [VariableDe
      $args.add($vdec);}
     )*)? RPAR ;
 
-//todo
 functionArguments returns [ExprInPar expr] locals [ArrayList<Expression> inputs]:
     {$inputs = new ArrayList<Expression>();}
     (ex1=expression
@@ -135,7 +125,6 @@ functionArguments returns [ExprInPar expr] locals [ArrayList<Expression> inputs]
     )*)?
     {$expr = new ExprInPar($inputs);};
 
-//todo
 body returns [Statement stmt]:
      (
      bs=blockStatement
@@ -145,7 +134,6 @@ body returns [Statement stmt]:
      (SEMICOLON)?)
      );
 
-//todo
 loopCondBody returns [Statement stmt]:
      (bs=blockStatement
      {$stmt = $bs.stmt;}
@@ -153,7 +141,6 @@ loopCondBody returns [Statement stmt]:
      {$stmt = $ss.stmt;}
      ));
 
-//todo
 blockStatement returns [BlockStmt stmt]:
     {$stmt = new BlockStmt();}
     bg=BEGIN
@@ -164,7 +151,6 @@ blockStatement returns [BlockStmt stmt]:
     {$stmt.addStatement($st2.stmt);}
     (SEMICOLON)?)+ NEWLINE+ END;
 
-//todo
 varDecStatement returns [VarDecStmt stmt] locals [VariableDeclaration var]:
     {$stmt = new VarDecStmt();}
     t=type i=identifier
@@ -184,7 +170,6 @@ varDecStatement returns [VarDecStmt stmt] locals [VariableDeclaration var]:
     {$stmt.addVar($var);}
     )*;
 
-//todo
 functionCallStmt returns [FunctionCallStmt stmt] locals [FunctionCall fcall, Expression instance]:
      oe=otherExpression
      {$instance = $oe.expr;}
@@ -202,7 +187,6 @@ functionCallStmt returns [FunctionCallStmt stmt] locals [FunctionCall fcall, Exp
       $stmt = new FunctionCallStmt($fcall);
       $stmt.setLine($lp.getLine());};
 
-//todo
 returnStatement returns [ReturnStmt stmt]:
     {$stmt = new ReturnStmt();}
     ret = RETURN
@@ -211,7 +195,6 @@ returnStatement returns [ReturnStmt stmt]:
     {$stmt.setReturnedExpr($ex.expr);}
     )?;
 
-//todo
 ifStatement returns [ConditionalStmt stmt]:
     f=IF cond=expression
     {$stmt = new ConditionalStmt($cond.expr);
@@ -224,12 +207,10 @@ ifStatement returns [ConditionalStmt stmt]:
     {$stmt.setElseBody($elstmt.stmt);}
     );
 
-//todo
 elseStatement returns [Statement stmt]:
      NEWLINE* ELSE lpb=loopCondBody
      {$stmt = $lpb.stmt;};
 
-//todo
 loopStatement returns [LoopStmt stmt]:
     wl=whileLoopStatement
     {$stmt = $wl.stmt;}
@@ -237,7 +218,6 @@ loopStatement returns [LoopStmt stmt]:
     {$stmt = $dl.stmt;}
     ;
 
-//todo
 whileLoopStatement returns [LoopStmt stmt]:
     w=WHILE cond=expression bod=loopCondBody
     {$stmt = new LoopStmt();
@@ -246,7 +226,6 @@ whileLoopStatement returns [LoopStmt stmt]:
      $stmt.setBody($bod.stmt);
      };
 
-//todo
 doWhileLoopStatement returns [LoopStmt stmt]:
     d=DO bod=body NEWLINE* WHILE cond=expression
     {$stmt = new LoopStmt();
@@ -255,19 +234,16 @@ doWhileLoopStatement returns [LoopStmt stmt]:
      $stmt.setBody($bod.stmt);
      };
 
-//todo
 displayStatement returns [DisplayStmt stmt]:
   disp=DISPLAY LPAR arg=expression RPAR
   {$stmt = new DisplayStmt($arg.expr);
    $stmt.setLine($disp.getLine());};
 
-//todo
 assignmentStatement returns [AssignmentStmt stmt]:
     lval=orExpression ass=ASSIGN rval=expression
     {$stmt = new AssignmentStmt($lval.expr, $rval.expr);
      $stmt.setLine($ass.getLine());};
 
-//todo
 singleStatement returns [Statement stmt] :
     ifstmt=ifStatement
     {$stmt = $ifstmt.stmt;}
@@ -291,7 +267,6 @@ singleStatement returns [Statement stmt] :
      $stmt.setLine($szstmt.expr.getLine());}
     ;
 
-//todo
 expression returns [Expression expr]:
     oe=orExpression
     {$expr = $oe.expr;}
@@ -300,7 +275,6 @@ expression returns [Expression expr]:
      $expr.setLine($op.getLine());}
     )? ;
 
-//todo
 orExpression returns [Expression expr]:
     an=andExpression
     {$expr = $an.expr;}
@@ -309,7 +283,6 @@ orExpression returns [Expression expr]:
      $expr.setLine($op.getLine());}
     )*;
 
-//todo
 andExpression returns [Expression expr]:
     eq=equalityExpression
     {$expr = $eq.expr;}
@@ -318,7 +291,6 @@ andExpression returns [Expression expr]:
      $expr.setLine($op.getLine());}
     )*;
 
-//todo
 equalityExpression returns [Expression expr]:
     re=relationalExpression
     {$expr = $re.expr;}
@@ -327,7 +299,6 @@ equalityExpression returns [Expression expr]:
      $expr.setLine($op.getLine());}
     )*;
 
-//todo
 relationalExpression returns [Expression expr] locals [BinaryOperator _op]:
     ad=additiveExpression
     {$expr = $ad.expr;}
@@ -340,7 +311,6 @@ relationalExpression returns [Expression expr] locals [BinaryOperator _op]:
      $expr.setLine($op.getLine());}
     )*;
 
-//todo
 additiveExpression returns [Expression expr] locals [BinaryOperator _op]:
     ml=multiplicativeExpression
     {$expr = $ml.expr;}
@@ -353,7 +323,6 @@ additiveExpression returns [Expression expr] locals [BinaryOperator _op]:
      $expr.setLine($op.getLine());}
     )*;
 
-//todo
 multiplicativeExpression returns [Expression expr] locals [BinaryOperator _op]:
     pu=preUnaryExpression
     {$expr = $pu.expr;}
@@ -367,7 +336,6 @@ multiplicativeExpression returns [Expression expr] locals [BinaryOperator _op]:
      $expr.setLine($op.getLine());}
     )*;
 
-//todo
 preUnaryExpression returns [Expression expr] locals [UnaryOperator _op]:
     ((op = NOT
     {$_op = UnaryOperator.not;}
@@ -381,7 +349,6 @@ preUnaryExpression returns [Expression expr] locals [UnaryOperator _op]:
     | ex=accessExpression
     {$expr = $ex.expr;};
 
-//todo
 accessExpression returns [Expression expr]:
     oe=otherExpression
     {$expr = $oe.expr;}
@@ -401,7 +368,6 @@ accessExpression returns [Expression expr]:
       $expr.setLine($d.getLine());}
      ))*;
 
-//todo
 otherExpression returns [Expression expr]:
     v=value
     {$expr = $v.expr;}
@@ -416,7 +382,6 @@ otherExpression returns [Expression expr]:
     {$expr = $a.expr;}
     ;
 
-//todo
 size returns [ListSize expr]:
     s=SIZE
     LPAR arg=expression RPAR
@@ -424,7 +389,6 @@ size returns [ListSize expr]:
      $expr.setLine($s.getLine());}
      ;
 
-//todo
 append returns [ListAppend expr]:
     a=APPEND
     LPAR liarg=expression COMMA elarg=expression RPAR
@@ -432,7 +396,6 @@ append returns [ListAppend expr]:
      $expr.setLine($a.getLine());}
      ;
 
-//todo
 value returns [Value expr]:
     bv=boolValue
     {$expr = $bv.expr;}
@@ -441,7 +404,6 @@ value returns [Value expr]:
      $expr.setLine($i.getLine());}
     ;
 
-//todo
 boolValue returns [BoolValue expr]:
     t=TRUE
     {$expr = new BoolValue(true);
@@ -451,7 +413,6 @@ boolValue returns [BoolValue expr]:
      $expr.setLine($f.getLine());}
     ;
 
-//todo
 identifier returns [Identifier expr]:
     i=IDENTIFIER
     {$expr = new Identifier($i.text);
@@ -459,7 +420,6 @@ identifier returns [Identifier expr]:
     }
     ;
 
-//todo
 type returns [Type tp]:
     INT
     {$tp = new IntType();}
@@ -473,7 +433,6 @@ type returns [Type tp]:
     {$tp = $f.tp;}
     ;
 
-//todo
 fptrType returns [FptrType tp] locals [ArrayList<Type> args, Type _return]:
     FPTR
     {$args = new ArrayList<Type>();}

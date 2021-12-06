@@ -6,44 +6,101 @@ import main.ast.nodes.declaration.struct.*;
 import main.ast.nodes.expression.*;
 import main.ast.nodes.expression.values.primitive.*;
 import main.ast.nodes.statement.*;
+import main.compileError.CompileError;
+import main.compileError.nameError.*;
 import main.visitor.*;
+import main.symbolTable.*;
+import main.symbolTable.exceptions.*;
+import main.symbolTable.items.*;
 
-public class ASTTreePrinter extends Visitor<Void> {
-    public void messagePrinter(int line, String message){
-        System.out.println("Line " + line + ": " + message);
+import java.util.ArrayList;
+
+public class NameAnalyzer  extends Visitor<Void> {
+    public boolean hasError() { return !errors.isEmpty(); }
+    private ArrayList<CompileError> errors;
+
+    private void errorPrinter() {
+        for (CompileError exception: errors)
+            System.out.println(exception.getMessage());
     }
 
     @Override
     public Void visit(Program program) {
-        messagePrinter(program.getLine(), program.toString());
-        for (StructDeclaration structDeclaration: program.getStructs())
-            structDeclaration.accept(this);
-        for (FunctionDeclaration functionDeclaration:program.getFunctions())
-            functionDeclaration.accept(this);
+        SymbolTable root = new SymbolTable();
+        SymbolTable.root = root;
+        SymbolTable.push(root);
+        errors = new ArrayList<CompileError>();
+
+        for (StructDeclaration structDeclaration: program.getStructs()) {
+            SymbolTable structSymbolTable = new SymbolTable();
+            StructSymbolTableItem newSymbolTableItem = new StructSymbolTableItem(structDeclaration);
+            newSymbolTableItem.setStructSymbolTable((structSymbolTable));
+            try{
+                root.put(newSymbolTableItem);
+            } catch (ItemAlreadyExistsException ex) {
+                DuplicateStruct exception = new DuplicateStruct(structDeclaration.getLine(), structDeclaration.getStructName().getName());
+                program.addError(exception);
+                structDeclaration.accept(this);
+            }
+            SymbolTable.push(structSymbolTable);
+        }
+
+        for (FunctionDeclaration functionDeclaration:program.getFunctions()) {
+            SymbolTable newSymbolTable = new SymbolTable();
+            FunctionSymbolTableItem newSymbolTableItem = new FunctionSymbolTableItem(functionDeclaration);
+            newSymbolTableItem.setFunctionSymbolTable((newSymbolTable));
+            try{
+                SymbolTable.root.getItem(StructSymbolTableItem.START_KEY + functionDeclaration.getFunctionName().getName());
+                FunctionStructConflict exception = new FunctionStructConflict(functionDeclaration.getLine(), functionDeclaration.getFunctionName().getName());
+                program.addError(exception);
+            } catch (ItemNotFoundException ignored){}
+            try{
+                root.put(newSymbolTableItem);
+            } catch (ItemAlreadyExistsException ex) {
+                DuplicateFunction exception = new DuplicateFunction(functionDeclaration.getLine(), functionDeclaration.getFunctionName().getName());
+                program.addError(exception);
+                functionDeclaration.accept(this);
+            }
+            SymbolTable.push(newSymbolTable);
+        }
+
         program.getMain().accept(this);
+        errors.addAll(program.flushErrors());
         return null;
     }
 
     @Override
     public Void visit(FunctionDeclaration functionDec) {
-        messagePrinter(functionDec.getLine(), functionDec.toString());
         functionDec.getFunctionName().accept(this);
-        for (VariableDeclaration var: functionDec.getArgs())
-            var.accept(this);
+        for (VariableDeclaration var: functionDec.getArgs()) {
+            VariableSymbolTableItem varSymbol = new VariableSymbolTableItem(var.getVarName());
+            try {
+                SymbolTable.top.put(varSymbol);
+            } catch (ItemAlreadyExistsException e) {
+                DuplicateVar exception = new DuplicateVar(var.getLine(), var.getVarName().getName());
+                functionDec.addError(exception);
+            }
+            try{
+                SymbolTable.root.getItem(FunctionSymbolTableItem.START_KEY + var.getVarName().getName());
+                VarFunctionConflict exception = new VarFunctionConflict(var.getLine(), var.getVarName().getName());
+                functionDec.addError(exception);
+            } catch (ItemNotFoundException e) {
+                e.printStackTrace();
+            }
+        }
         functionDec.getBody().accept(this);
+
         return null;
     }
 
     @Override
     public Void visit(MainDeclaration mainDec) {
-        messagePrinter(mainDec.getLine(), mainDec.toString());
         mainDec.getBody().accept(this);
         return null;
     }
-
+    //todo
     @Override
     public Void visit(VariableDeclaration variableDec) {
-        messagePrinter(variableDec.getLine(), variableDec.toString());
         variableDec.getVarName().accept(this);
         if (variableDec.getDefaultValue() != null)
             variableDec.getDefaultValue().accept(this);
@@ -52,7 +109,6 @@ public class ASTTreePrinter extends Visitor<Void> {
 
     @Override
     public Void visit(StructDeclaration structDec) {
-        messagePrinter(structDec.getLine(), structDec.toString());
         structDec.getStructName().accept(this);
         structDec.getBody().accept(this);
         return null;
@@ -60,7 +116,6 @@ public class ASTTreePrinter extends Visitor<Void> {
 
     @Override
     public Void visit(SetGetVarDeclaration setGetVarDec) {
-        messagePrinter(setGetVarDec.getLine(), setGetVarDec.toString());
         setGetVarDec.getVarName().accept(this);
         for (VariableDeclaration var: setGetVarDec.getArgs())
             var.accept(this);
@@ -71,7 +126,6 @@ public class ASTTreePrinter extends Visitor<Void> {
 
     @Override
     public Void visit(AssignmentStmt assignmentStmt) {
-        messagePrinter(assignmentStmt.getLine(), assignmentStmt.toString());
         assignmentStmt.getLValue().accept(this);
         assignmentStmt.getRValue().accept(this);
         return null;
@@ -79,7 +133,6 @@ public class ASTTreePrinter extends Visitor<Void> {
 
     @Override
     public Void visit(BlockStmt blockStmt) {
-        messagePrinter(blockStmt.getLine(), blockStmt.toString());
         for (Statement stmt: blockStmt.getStatements())
             stmt.accept(this);
         return null;
@@ -87,7 +140,6 @@ public class ASTTreePrinter extends Visitor<Void> {
 
     @Override
     public Void visit(ConditionalStmt conditionalStmt) {
-        messagePrinter(conditionalStmt.getLine(), conditionalStmt.toString());
         conditionalStmt.getCondition().accept(this);
         conditionalStmt.getThenBody().accept(this);
         conditionalStmt.getElseBody().accept(this);
@@ -96,28 +148,24 @@ public class ASTTreePrinter extends Visitor<Void> {
 
     @Override
     public Void visit(FunctionCallStmt functionCallStmt) {
-        messagePrinter(functionCallStmt.getLine(), functionCallStmt.toString());
         functionCallStmt.getFunctionCall().accept(this);
         return null;
     }
 
     @Override
     public Void visit(DisplayStmt displayStmt) {
-        messagePrinter(displayStmt.getLine(), displayStmt.toString());
         displayStmt.getArg().accept(this);
         return null;
     }
 
     @Override
     public Void visit(ReturnStmt returnStmt) {
-        messagePrinter(returnStmt.getLine(), returnStmt.toString());
         returnStmt.getReturnedExpr().accept(this);
         return null;
     }
 
     @Override
     public Void visit(LoopStmt loopStmt) {
-        messagePrinter(loopStmt.getLine(), loopStmt.toString());
         loopStmt.getCondition().accept(this);
         loopStmt.getBody().accept(this);
         return null;
@@ -125,7 +173,6 @@ public class ASTTreePrinter extends Visitor<Void> {
 
     @Override
     public Void visit(VarDecStmt varDecStmt) {
-        messagePrinter(varDecStmt.getLine(), varDecStmt.toString());
         for (VariableDeclaration var: varDecStmt.getVars())
             var.accept(this);
         return null;
@@ -133,21 +180,18 @@ public class ASTTreePrinter extends Visitor<Void> {
 
     @Override
     public Void visit(ListAppendStmt listAppendStmt) {
-        messagePrinter(listAppendStmt.getLine(), listAppendStmt.toString());
         listAppendStmt.getListAppendExpr().accept(this);
         return null;
     }
 
     @Override
     public Void visit(ListSizeStmt listSizeStmt) {
-        messagePrinter(listSizeStmt.getLine(), listSizeStmt.toString());
         listSizeStmt.getListSizeExpr().accept(this);
         return null;
     }
 
     @Override
     public Void visit(BinaryExpression binaryExpression) {
-        messagePrinter(binaryExpression.getLine(), binaryExpression.toString());
         binaryExpression.getFirstOperand().accept(this);
         binaryExpression.getSecondOperand().accept(this);
         return null;
@@ -155,14 +199,12 @@ public class ASTTreePrinter extends Visitor<Void> {
 
     @Override
     public Void visit(UnaryExpression unaryExpression) {
-        messagePrinter(unaryExpression.getLine(), unaryExpression.toString());
         unaryExpression.getOperand().accept(this);
         return null;
     }
 
     @Override
     public Void visit(FunctionCall funcCall) {
-        messagePrinter(funcCall.getLine(), funcCall.toString());
         funcCall.getInstance().accept(this);
         for (Expression expr: funcCall.getArgs())
             expr.accept(this);
@@ -171,13 +213,11 @@ public class ASTTreePrinter extends Visitor<Void> {
 
     @Override
     public Void visit(Identifier identifier) {
-        messagePrinter(identifier.getLine(), identifier.toString());
         return null;
     }
 
     @Override
     public Void visit(ListAccessByIndex listAccessByIndex) {
-        messagePrinter(listAccessByIndex.getLine(), listAccessByIndex.toString());
         listAccessByIndex.getInstance().accept(this);
         listAccessByIndex.getIndex().accept(this);
         return null;
@@ -185,7 +225,6 @@ public class ASTTreePrinter extends Visitor<Void> {
 
     @Override
     public Void visit(StructAccess structAccess) {
-        messagePrinter(structAccess.getLine(), structAccess.toString());
         structAccess.getInstance().accept(this);
         structAccess.getElement().accept(this);
         return null;
@@ -193,14 +232,12 @@ public class ASTTreePrinter extends Visitor<Void> {
 
     @Override
     public Void visit(ListSize listSize) {
-        messagePrinter(listSize.getLine(), listSize.toString());
         listSize.getArg().accept(this);
         return null;
     }
 
     @Override
     public Void visit(ListAppend listAppend) {
-        messagePrinter(listAppend.getLine(), listAppend.toString());
         listAppend.getListArg().accept(this);
         listAppend.getElementArg().accept(this);
         return null;
@@ -208,7 +245,6 @@ public class ASTTreePrinter extends Visitor<Void> {
 
     @Override
     public Void visit(ExprInPar exprInPar) {
-        messagePrinter(exprInPar.getLine(), exprInPar.toString());
         for (Expression expr: exprInPar.getInputs())
             expr.accept(this);
         return null;
@@ -216,13 +252,11 @@ public class ASTTreePrinter extends Visitor<Void> {
 
     @Override
     public Void visit(IntValue intValue) {
-        messagePrinter(intValue.getLine(), intValue.toString());
         return null;
     }
 
     @Override
     public Void visit(BoolValue boolValue) {
-        messagePrinter(boolValue.getLine(), boolValue.toString());
         return null;
     }
 }
