@@ -1,9 +1,10 @@
 struct A begin
-    struct A a
+    struct B a
 end
 
-struct B
+struct B begin
     struct C c
+   end
 
 struct C
     struct A a

@@ -40,9 +40,9 @@ public class NameAnalyzer  extends Visitor<Void> {
             try {
                 StructDeclaration neighborStruct = nameStruct.get(neighbor);
                 if (isBeingVisited.containsKey(neighborStruct) && isBeingVisited.get(neighborStruct)) {
-                    inCycle.add(neighborStruct);
+                    inCycle.add(struct);
                     return true;
-                } else if (isVisited.containsKey(neighborStruct) && isVisited.get(neighborStruct) && hasCycle(neighborStruct)) {
+                } else if (hasCycle(neighborStruct) && isVisited.containsKey(neighborStruct) && isVisited.get(neighborStruct)) {
                     inCycle.add(neighborStruct);
                     return true;
                 }
@@ -56,6 +56,7 @@ public class NameAnalyzer  extends Visitor<Void> {
 
     private void checkCyclicDependencies(ArrayList<StructDeclaration> structs){
         for (StructDeclaration structDeclaration : structs) {
+            isVisited.clear();
             hasCycle(structDeclaration);
         }
         for(StructDeclaration struct : inCycle){
