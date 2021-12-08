@@ -1,6 +1,5 @@
 struct A begin
-    struct B b;
-    struct D d
+    struct A a
 end
 
 struct B

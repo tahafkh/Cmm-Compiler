@@ -6,7 +6,6 @@ import main.ast.nodes.declaration.struct.*;
 import main.ast.nodes.expression.*;
 import main.ast.nodes.expression.values.primitive.*;
 import main.ast.nodes.statement.*;
-import main.ast.types.StructType;
 import main.compileError.CompileError;
 import main.compileError.nameError.*;
 import main.visitor.*;
@@ -16,22 +15,52 @@ import main.symbolTable.items.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Objects;
+import java.util.HashSet;
+import java.util.Iterator;
 
 public class NameAnalyzer  extends Visitor<Void> {
     public boolean hasError() { return !errors.isEmpty(); }
     private ArrayList<CompileError> errors;
+    private int newStructID = 1;
+    private int newFuncID = 1;
 
     private boolean inStruct = false;
-    private boolean isDuplicateStruct = false;
     private StructDeclaration curr_struct = null;
     private HashMap<StructDeclaration, ArrayList<String> > structDependency =
             new HashMap<>();
     private HashMap<String, StructDeclaration > nameStruct = new HashMap<>();
+    private HashMap<StructDeclaration, Boolean> isBeingVisited = new HashMap<>();
+    private HashMap<StructDeclaration, Boolean> isVisited = new HashMap<>();
+    private HashSet<StructDeclaration> inCycle = new HashSet<>();
 
+    private boolean hasCycle(StructDeclaration struct) {
+        isBeingVisited.put(struct, true);
+
+        for (String neighbor : structDependency.get(struct)) {
+            try {
+                StructDeclaration neighborStruct = nameStruct.get(neighbor);
+                if (isBeingVisited.containsKey(neighborStruct) && isBeingVisited.get(neighborStruct)) {
+                    inCycle.add(neighborStruct);
+                    return true;
+                } else if (isVisited.containsKey(neighborStruct) && isVisited.get(neighborStruct) && hasCycle(neighborStruct)) {
+                    inCycle.add(neighborStruct);
+                    return true;
+                }
+            } catch (Exception ignored) {}
+        }
+
+        isBeingVisited.put(struct, false);
+        isVisited.put(struct, true);
+        return false;
+    }
 
     private void checkCyclicDependencies(ArrayList<StructDeclaration> structs){
-
+        for (StructDeclaration structDeclaration : structs) {
+            hasCycle(structDeclaration);
+        }
+        for(StructDeclaration struct : inCycle){
+            errors.add(new CyclicDependency(struct.getLine(), struct.getStructName().getName()));
+        }
     }
 
     private void printErrors() {
@@ -47,28 +76,32 @@ public class NameAnalyzer  extends Visitor<Void> {
         errors = new ArrayList<CompileError>();
 
         for (StructDeclaration structDeclaration: program.getStructs()) {
-            isDuplicateStruct = false;
             SymbolTable structSymbolTable = new SymbolTable();
             StructSymbolTableItem newSymbolTableItem = new StructSymbolTableItem(structDeclaration);
-            newSymbolTableItem.setStructSymbolTable((structSymbolTable));
+            newSymbolTableItem.setStructSymbolTable(structSymbolTable);
             try{
                 root.put(newSymbolTableItem);
-                nameStruct.put(structDeclaration.getStructName().getName(), structDeclaration);
+
+                nameStruct.put(structDeclaration.toString(), structDeclaration);
             } catch (ItemAlreadyExistsException ex) {
                 DuplicateStruct exception = new DuplicateStruct(structDeclaration.getLine(), structDeclaration.getStructName().getName());
                 program.addError(exception);
-                isDuplicateStruct = true;
+                String newName = structDeclaration.getStructName().getName() + "@" + newStructID;
+                newStructID += 1;
+                structDeclaration.setStructName(new Identifier(newName));
+                try {
+                    StructSymbolTableItem newStructSym = new StructSymbolTableItem(structDeclaration);
+                    newStructSym.setStructSymbolTable(structSymbolTable);
+                    root.put(newStructSym);
+                } catch (ItemAlreadyExistsException ignored) {}
             }
             SymbolTable.push(structSymbolTable);
-            structDeclaration.accept(this);
         }
 
-        ArrayList<StructDeclaration> structs = new ArrayList<StructDeclaration>(structDependency.keySet());
-
         for (FunctionDeclaration functionDeclaration:program.getFunctions()) {
-            SymbolTable newSymbolTable = new SymbolTable();
+            SymbolTable funcSymbolTable = new SymbolTable();
             FunctionSymbolTableItem newSymbolTableItem = new FunctionSymbolTableItem(functionDeclaration);
-            newSymbolTableItem.setFunctionSymbolTable((newSymbolTable));
+            newSymbolTableItem.setFunctionSymbolTable(funcSymbolTable);
             try{
                 SymbolTable.root.getItem(StructSymbolTableItem.START_KEY + functionDeclaration.getFunctionName().getName());
                 FunctionStructConflict exception = new FunctionStructConflict(functionDeclaration.getLine(), functionDeclaration.getFunctionName().getName());
@@ -79,12 +112,46 @@ public class NameAnalyzer  extends Visitor<Void> {
             } catch (ItemAlreadyExistsException e) {
                 DuplicateFunction exception = new DuplicateFunction(functionDeclaration.getLine(), functionDeclaration.getFunctionName().getName());
                 program.addError(exception);
+                String newName = functionDeclaration.getFunctionName().getName() + "@" + newFuncID;
+                newFuncID += 1;
+                functionDeclaration.setFunctionName(new Identifier(newName));
+                try {
+                    FunctionSymbolTableItem newFuncSym = new FunctionSymbolTableItem(functionDeclaration);
+                    newFuncSym.setFunctionSymbolTable(funcSymbolTable);
+                    root.put(newFuncSym);
+                } catch (ItemAlreadyExistsException ignored) {}
             }
-            SymbolTable.push(newSymbolTable);
-            functionDeclaration.accept(this);
+            SymbolTable.push(funcSymbolTable);
         }
 
         program.getMain().accept(this);
+
+        for (StructDeclaration structDeclaration: program.getStructs()) {
+            SymbolTableItem curSymbolTableItem;
+            StructSymbolTableItem structSymbolTableItem;
+            try{
+                curSymbolTableItem = SymbolTable.root.getItem(StructSymbolTableItem.START_KEY + structDeclaration.getStructName().getName());
+                structSymbolTableItem = (StructSymbolTableItem) curSymbolTableItem;
+                SymbolTable.push(structSymbolTableItem.getStructSymbolTable());
+                structDeclaration.accept(this);
+                SymbolTable.pop();
+            }catch (ItemNotFoundException ignored){}
+        }
+
+        ArrayList<StructDeclaration> structs = new ArrayList<StructDeclaration>(structDependency.keySet());
+        checkCyclicDependencies(structs);
+
+        for (FunctionDeclaration funcDeclaration: program.getFunctions()) {
+            SymbolTableItem curSymbolTableItem;
+            FunctionSymbolTableItem funcSymbolTableItem;
+            try{
+                curSymbolTableItem = SymbolTable.root.getItem(FunctionSymbolTableItem.START_KEY + funcDeclaration.getFunctionName().getName());
+                funcSymbolTableItem = (FunctionSymbolTableItem) curSymbolTableItem;
+                SymbolTable.push(funcSymbolTableItem.getFunctionSymbolTable());
+                funcDeclaration.accept(this);
+                SymbolTable.pop();
+            }catch (ItemNotFoundException ignored){}
+        }
 
         errors.addAll(program.flushErrors());
         printErrors();
@@ -127,10 +194,12 @@ public class NameAnalyzer  extends Visitor<Void> {
 
     @Override
     public Void visit(VariableDeclaration variableDec) {
-        if (inStruct && !isDuplicateStruct)
-            if(variableDec.getVarType().toString().length() >=11 && Objects.equals(variableDec.getVarType().toString().substring(0,10), "StructType"))
-                structDependency.computeIfAbsent(curr_struct, k -> new ArrayList<>()).add(variableDec.getVarName().getName());
-
+        if (inStruct && !curr_struct.getStructName().getName().contains("@")) {
+            if (variableDec.getVarType().toString().contains("StructType_")) {
+                String neighbourStruct = variableDec.getVarType().toString().replace("StructType", "StructDeclaration");
+                structDependency.computeIfAbsent(curr_struct, k -> new ArrayList<>()).add(neighbourStruct);
+            }
+        }
         VariableSymbolTableItem varSymbol = new VariableSymbolTableItem(variableDec.getVarName());
         try {
             SymbolTable.top.getItem(VariableSymbolTableItem.START_KEY + variableDec.getVarName().getName());
