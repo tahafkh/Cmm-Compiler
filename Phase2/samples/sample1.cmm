@@ -1,11 +1,21 @@
-struct a begin
-    int b
+struct point begin
+    int kk(bool ii) begin
+        set
+            return kk
+        get
+            return kk
     end
 
-   struct b begin
-   int a
-   end
+    int ii (int jj, int jj) begin
+        set
+            return
+        get
+            return
+    end
+    int jj
+    int kk
 
-   main() begin
-   return taha
-   end
+end
+
+main()
+    return dot

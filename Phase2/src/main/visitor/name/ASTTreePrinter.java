@@ -90,7 +90,8 @@ public class ASTTreePrinter extends Visitor<Void> {
         messagePrinter(conditionalStmt.getLine(), conditionalStmt.toString());
         conditionalStmt.getCondition().accept(this);
         conditionalStmt.getThenBody().accept(this);
-        conditionalStmt.getElseBody().accept(this);
+        if (conditionalStmt.getElseBody() != null)
+            conditionalStmt.getElseBody().accept(this);
         return null;
     }
 
@@ -111,7 +112,8 @@ public class ASTTreePrinter extends Visitor<Void> {
     @Override
     public Void visit(ReturnStmt returnStmt) {
         messagePrinter(returnStmt.getLine(), returnStmt.toString());
-        returnStmt.getReturnedExpr().accept(this);
+        if (returnStmt.getReturnedExpr() != null)
+            returnStmt.getReturnedExpr().accept(this);
         return null;
     }
 

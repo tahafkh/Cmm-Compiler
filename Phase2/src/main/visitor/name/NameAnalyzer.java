@@ -35,23 +35,23 @@ public class NameAnalyzer  extends Visitor<Void> {
 
     private boolean hasCycle(StructDeclaration struct) {
         isBeingVisited.put(struct, true);
-
+        Boolean isInCycle = false;
         for (String neighbor : structDependency.get(struct)) {
             try {
                 StructDeclaration neighborStruct = nameStruct.get(neighbor);
                 if (isBeingVisited.containsKey(neighborStruct) && isBeingVisited.get(neighborStruct)) {
-                    inCycle.add(struct);
-                    return true;
-                } else if (hasCycle(neighborStruct) && isVisited.containsKey(neighborStruct) && isVisited.get(neighborStruct)) {
                     inCycle.add(neighborStruct);
-                    return true;
+                    isInCycle = true;
+                }
+                else if (hasCycle(neighborStruct) && isVisited.containsKey(neighborStruct) && isVisited.get(neighborStruct)) {
+                    inCycle.add(neighborStruct);
                 }
             } catch (Exception ignored) {}
         }
 
         isBeingVisited.put(struct, false);
         isVisited.put(struct, true);
-        return false;
+        return isInCycle;
     }
 
     private void checkCyclicDependencies(ArrayList<StructDeclaration> structs){
@@ -125,7 +125,9 @@ public class NameAnalyzer  extends Visitor<Void> {
             SymbolTable.push(funcSymbolTable);
         }
 
+        SymbolTable.push(new SymbolTable());
         program.getMain().accept(this);
+        SymbolTable.pop();
 
         for (StructDeclaration structDeclaration: program.getStructs()) {
             SymbolTableItem curSymbolTableItem;
@@ -290,9 +292,11 @@ public class NameAnalyzer  extends Visitor<Void> {
         conditionalStmt.getThenBody().accept(this);
         SymbolTable.pop();
         SymbolTable _else = new SymbolTable(SymbolTable.top);
-        SymbolTable.push(_else);
-        conditionalStmt.getElseBody().accept(this);
-        SymbolTable.pop();
+        if (conditionalStmt.getElseBody() != null) {
+            SymbolTable.push(_else);
+            conditionalStmt.getElseBody().accept(this);
+            SymbolTable.pop();
+        }
         return null;
     }
 
@@ -310,7 +314,8 @@ public class NameAnalyzer  extends Visitor<Void> {
 
     @Override
     public Void visit(ReturnStmt returnStmt) {
-        returnStmt.getReturnedExpr().accept(this);
+        if (returnStmt.getReturnedExpr() != null)
+            returnStmt.getReturnedExpr().accept(this);
         return null;
     }
 
