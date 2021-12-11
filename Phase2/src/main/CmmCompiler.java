@@ -1,5 +1,6 @@
 package main;
 
+import main.visitor.name.*;
 import parsers.*;
 import main.ast.nodes.Program;
 import org.antlr.v4.runtime.CharStream;
@@ -13,6 +14,11 @@ public class CmmCompiler {
 
         Program program = cmmParser.cmm().cmmProgram;
 
-        //todo
+        NameAnalyzer nameAnalyser = new NameAnalyzer();
+        nameAnalyser.visit(program);
+
+        ASTTreePrinter astTreePrinter = new ASTTreePrinter();
+        if (!nameAnalyser.hasError())
+            astTreePrinter.visit(program);
     }
 }

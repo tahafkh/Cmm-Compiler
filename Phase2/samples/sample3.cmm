@@ -1,0 +1,29 @@
+struct A begin
+    struct B a
+end
+
+struct B begin
+    struct C c
+    struct E e
+end
+
+struct C
+    struct D d
+
+struct D begin
+    struct A a
+    struct G g
+end
+
+struct E
+    struct F f
+
+struct F
+    struct B b
+
+struct G
+    struct X x
+
+main() begin
+    return 2
+end
