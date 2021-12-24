@@ -22,7 +22,7 @@ public class ExpressionTypeChecker extends Visitor<Type> {
     private Boolean isFunctioncallStmt = false;
     private Boolean isStructDec = false;
 
-    private Boolean haveSameType(Type leftType, Type rightType) {
+    public Boolean haveSameType(Type leftType, Type rightType) {
         if(leftType instanceof NoType || rightType instanceof NoType)
             return true;
         if(leftType instanceof IntType  && rightType instanceof IntType)
