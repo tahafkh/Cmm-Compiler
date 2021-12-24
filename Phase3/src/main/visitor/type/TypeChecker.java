@@ -15,7 +15,7 @@ public class TypeChecker extends Visitor<Void> {
 
     @Override
     public Void visit(Program program) {
-        //Todo
+
         return null;
     }
 

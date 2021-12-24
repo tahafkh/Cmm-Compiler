@@ -370,7 +370,7 @@ public class NameAnalyzer  extends Visitor<Void> {
     }
 
     @Override
-    public Void visit(Identifier identifier) { //todo?
+    public Void visit(Identifier identifier) {
         return null;
     }
 
