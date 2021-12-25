@@ -25,7 +25,7 @@ public class ExpressionTypeChecker extends Visitor<Type> {
         this.isStructDec = isStructDec;
     }
 
-    private Boolean isLValue(Expression expression){
+    public Boolean isLValue(Expression expression){
         return (expression instanceof Identifier) || (expression instanceof StructAccess)
                 || (expression instanceof ListAccessByIndex);
     }
@@ -41,7 +41,6 @@ public class ExpressionTypeChecker extends Visitor<Type> {
             return true;
 
         if(leftType instanceof FptrType && rightType instanceof FptrType){
-            //todo: Point to the same function???
             if (!haveSameType( ((FptrType) leftType).getReturnType(), ((FptrType) rightType).getReturnType() ))
                 return false;
 

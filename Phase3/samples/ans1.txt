@@ -2,7 +2,7 @@ Line 6: Cannot define a new variable in this scope
 Line 6: Unsupported operand type for operator and
 Line 6: Variable var is not declared
 Line 7: Unsupported operand type for operator assign
-Line 8: Cannot use return statement in this scope
+Line 8: Cannot use return statement in this scope //
 Line 11: Variable arg is not declared
 Line 17: Struct B is not declared
 Line 18:Unsupported operand type for operator gt
