@@ -18,9 +18,17 @@ import java.util.ArrayList;
 
 public class ExpressionTypeChecker extends Visitor<Type> {
 
-    private Boolean isLValue = false;
     private Boolean isFunctioncallStmt = false;
     private Boolean isStructDec = false;
+
+    public void setIsStructDec(Boolean isStructDec){
+        this.isStructDec = isStructDec;
+    }
+
+    private Boolean isLValue(Expression expression){
+        return (expression instanceof Identifier) || (expression instanceof StructAccess)
+                || (expression instanceof ListAccessByIndex);
+    }
 
     public Boolean haveSameType(Type leftType, Type rightType) {
         if(leftType instanceof NoType || rightType instanceof NoType)
@@ -60,12 +68,9 @@ public class ExpressionTypeChecker extends Visitor<Type> {
         Expression right = binaryExpression.getSecondOperand();
         BinaryOperator operator =  binaryExpression.getBinaryOperator();
 
-        this.isLValue = false;
         Type leftType = left.accept(this);
 
-        Boolean temp = this.isLValue;
         Type rightType = right.accept(this);
-        this.isLValue = temp;
 
         if (operator.equals(BinaryOperator.and) || operator.equals(BinaryOperator.or)){
             if (leftType instanceof BoolType && rightType instanceof BoolType)
@@ -110,7 +115,7 @@ public class ExpressionTypeChecker extends Visitor<Type> {
                 binaryExpression.addError(exception);
                 return new NoType();
             }
-            if (!this.isLValue) {
+            if (!isLValue(left)) {
                 LeftSideNotLvalue exception = new LeftSideNotLvalue(left.getLine());
                 binaryExpression.addError(exception);
                 return new NoType();
@@ -232,9 +237,11 @@ public class ExpressionTypeChecker extends Visitor<Type> {
     public Type visit(Identifier identifier) {
         try{
             StructSymbolTableItem structItem = (StructSymbolTableItem) SymbolTable.root.getItem(StructSymbolTableItem.START_KEY + identifier.getName());
+            return new StructType(identifier);
         }catch (ItemNotFoundException e) {
             try{
-                SymbolTable.top.getItem(VariableSymbolTableItem.START_KEY + identifier.getName());
+                VariableSymbolTableItem variableItem = (VariableSymbolTableItem) SymbolTable.top.getItem(VariableSymbolTableItem.START_KEY + identifier.getName());
+                return variableItem.getType();
             } catch (ItemNotFoundException e1) {
                 if (this.isStructDec) {
                     StructNotDeclared exception = new StructNotDeclared(identifier.getLine(), identifier.getName());
@@ -246,7 +253,7 @@ public class ExpressionTypeChecker extends Visitor<Type> {
                 }
             }
         }
-        return null;
+        return new NoType();
     }
 
     @Override
@@ -276,9 +283,21 @@ public class ExpressionTypeChecker extends Visitor<Type> {
         Identifier element = structAccess.getElement();
         Type structType = instance.accept(this);
         if(structType instanceof StructType) {
-            element.accept(this); //TODO
-
-            StructMemberNotFound exception = new StructMemberNotFound(structAccess.getLine(), );
+            String structName = ((StructType) structType).getStructName().getName();
+            SymbolTable structSymbolTable;
+            try{
+                structSymbolTable = ((StructSymbolTableItem) SymbolTable.root.getItem(StructSymbolTableItem.START_KEY + structName)).getStructSymbolTable();
+            }catch (ItemNotFoundException structNotFound){
+                return new NoType();
+            }
+            try{
+                VariableSymbolTableItem variableSymbolTableItem = (VariableSymbolTableItem) structSymbolTable.getItem(VariableSymbolTableItem.START_KEY + element.getName());
+                return variableSymbolTableItem.getType();
+            }catch(ItemNotFoundException elementNotFound){
+                StructMemberNotFound exception = new StructMemberNotFound(structAccess.getLine(), structName, element.getName());
+                structAccess.addError(exception);
+                return new NoType();
+            }
         }
         else if(!(structType instanceof NoType)) {
             AccessOnNonStruct exception = new AccessOnNonStruct(structAccess.getLine());
@@ -324,8 +343,12 @@ public class ExpressionTypeChecker extends Visitor<Type> {
 
     @Override
     public Type visit(ExprInPar exprInPar) {
-        //Todo
-        return null;
+        ArrayList<Expression> inputs = exprInPar.getInputs();
+        Type type = inputs.get(0).accept(this);
+        for (int i = 1; i < inputs.size(); i++) {
+            inputs.get(i).accept(this);
+        }
+        return type;
     }
 
     @Override
