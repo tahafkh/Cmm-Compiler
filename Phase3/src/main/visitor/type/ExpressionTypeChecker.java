@@ -1,11 +1,13 @@
 package main.visitor.type;
 
+import main.ast.nodes.Node;
 import main.ast.nodes.expression.*;
 import main.ast.nodes.expression.operators.*;
 import main.ast.nodes.expression.values.primitive.BoolValue;
 import main.ast.nodes.expression.values.primitive.IntValue;
 import main.ast.types.*;
 import main.ast.types.primitives.*;
+import main.compileError.CompileError;
 import main.compileError.typeError.*;
 import main.symbolTable.SymbolTable;
 import main.symbolTable.exceptions.ItemNotFoundException;
@@ -20,6 +22,11 @@ public class ExpressionTypeChecker extends Visitor<Type> {
 
     private Boolean isFunctioncallStmt = false;
     private Boolean isStructDec = false;
+
+    public void addChildNodeErrors(Node parentNode, Node childNode) {
+        for (CompileError exception : childNode.flushErrors())
+            parentNode.addError(exception);
+    }
 
     public void setIsStructDec(Boolean isStructDec){
         this.isStructDec = isStructDec;
@@ -235,21 +242,26 @@ public class ExpressionTypeChecker extends Visitor<Type> {
     @Override
     public Type visit(Identifier identifier) {
         try{
+            FunctionSymbolTableItem funcItem = (FunctionSymbolTableItem) SymbolTable.root.getItem(FunctionSymbolTableItem.START_KEY + identifier.getName());
+            return new FptrType(funcItem.getArgTypes(), funcItem.getReturnType());
+        } catch (ItemNotFoundException ignored) {}
+
+        try{
             StructSymbolTableItem structItem = (StructSymbolTableItem) SymbolTable.root.getItem(StructSymbolTableItem.START_KEY + identifier.getName());
             return new StructType(identifier);
-        }catch (ItemNotFoundException e) {
-            try{
-                VariableSymbolTableItem variableItem = (VariableSymbolTableItem) SymbolTable.top.getItem(VariableSymbolTableItem.START_KEY + identifier.getName());
-                return variableItem.getType();
-            } catch (ItemNotFoundException e1) {
-                if (this.isStructDec) {
-                    StructNotDeclared exception = new StructNotDeclared(identifier.getLine(), identifier.getName());
-                    identifier.addError(exception);
-                }
-                else{
-                    VarNotDeclared exception = new VarNotDeclared(identifier.getLine(), identifier.getName());
-                    identifier.addError(exception);
-                }
+        }catch (ItemNotFoundException ignored) {}
+
+        try{
+            VariableSymbolTableItem variableItem = (VariableSymbolTableItem) SymbolTable.top.getItem(VariableSymbolTableItem.START_KEY + identifier.getName());
+            return variableItem.getType();
+        } catch (ItemNotFoundException e1) {
+            if (this.isStructDec) {
+                StructNotDeclared exception = new StructNotDeclared(identifier.getLine(), identifier.getName());
+                identifier.addError(exception);
+            }
+            else{
+                VarNotDeclared exception = new VarNotDeclared(identifier.getLine(), identifier.getName());
+                identifier.addError(exception);
             }
         }
         return new NoType();
@@ -260,14 +272,16 @@ public class ExpressionTypeChecker extends Visitor<Type> {
         Type listType = listAccessByIndex.getInstance().accept(this);
         Type indexType = listAccessByIndex.getIndex().accept(this);
 
+        if(!(indexType instanceof IntType) && !(indexType instanceof NoType)) {
+            ListIndexNotInt exception = new ListIndexNotInt(listAccessByIndex.getLine());
+            listAccessByIndex.addError(exception);
+        }
+        addChildNodeErrors(listAccessByIndex, listAccessByIndex.getInstance());
+        addChildNodeErrors(listAccessByIndex, listAccessByIndex.getIndex());
+
         if(listType instanceof ListType) {
             if (haveSameType( ((ListType) listType).getType(), indexType))
                 return new IntType();
-
-            if(!(indexType instanceof IntType)) {
-                ListIndexNotInt exception = new ListIndexNotInt(listAccessByIndex.getLine());
-                listAccessByIndex.addError(exception);
-            }
         }
         else if(!(listType instanceof NoType)) {
             AccessByIndexOnNonList exception = new AccessByIndexOnNonList(listAccessByIndex.getLine());
@@ -326,7 +340,7 @@ public class ExpressionTypeChecker extends Visitor<Type> {
 
         if(listArgType instanceof ListType) {
             if (haveSameType( ((ListType) listArgType).getType(), elementArgType))
-                return new IntType();
+                return new VoidType();
 
             if(!(elementArgType instanceof NoType)) {
                 NewElementTypeNotMatchListType exception = new NewElementTypeNotMatchListType(listAppend.getLine());

@@ -64,10 +64,7 @@ public class TypeChecker extends Visitor<Boolean> {
     public Boolean visit(FunctionDeclaration functionDec) {
         curFunction = functionDec;
         for (VariableDeclaration var: functionDec.getArgs()) {
-            VariableSymbolTableItem varSymbol = new VariableSymbolTableItem(var.getVarName());
-            try {
-                SymbolTable.top.put(varSymbol);
-            } catch (ItemAlreadyExistsException ignored) {}
+            var.accept(this);
         }
 
         if (functionDec.getReturnType() instanceof StructType structType) {
@@ -76,8 +73,7 @@ public class TypeChecker extends Visitor<Boolean> {
             structRet.setLine(functionDec.getLine());
             structRet.accept(expressionTypeChecker);
             expressionTypeChecker.setIsStructDec(false);
-            for (CompileError exception : structRet.flushErrors())
-                functionDec.addError(exception);
+            expressionTypeChecker.addChildNodeErrors(functionDec, structRet);
         }
 
         Boolean hasRet = functionDec.getBody().accept(this);
@@ -106,25 +102,33 @@ public class TypeChecker extends Visitor<Boolean> {
 
     @Override
     public Boolean visit(VariableDeclaration variableDec) {
+        Type defaultType = variableDec.getVarType();
+
         if (variableDec.getDefaultValue() != null) {
-            Type defaultType = variableDec.getDefaultValue().accept(expressionTypeChecker);
-            if (!expressionTypeChecker.haveSameType(variableDec.getVarType(), defaultType)) {
+            Type defaultValType = variableDec.getDefaultValue().accept(expressionTypeChecker);
+            if (!expressionTypeChecker.haveSameType(variableDec.getVarType(), defaultValType)) {
                 UnsupportedOperandType exception;
                 exception = new UnsupportedOperandType(variableDec.getLine(), BinaryOperator.assign.name());
                 variableDec.addError(exception);
             }
         }
-        if (variableDec.getVarType() instanceof StructType structVar) {
+        if (defaultType instanceof StructType structVar) {
             expressionTypeChecker.setIsStructDec(true);
-            structVar.getStructName().accept(expressionTypeChecker);
+            defaultType = structVar.getStructName().accept(expressionTypeChecker);
             expressionTypeChecker.setIsStructDec(false);
+            expressionTypeChecker.addChildNodeErrors(variableDec, structVar.getStructName());
         }
 
         try {
             VariableSymbolTableItem newVar = new VariableSymbolTableItem(variableDec.getVarName());
-            newVar.setType(variableDec.getVarType());
+            newVar.setType(defaultType);
             SymbolTable.top.put(newVar);
-        } catch (ItemAlreadyExistsException ignored) {}
+        } catch (ItemAlreadyExistsException e) {
+            try {
+                VariableSymbolTableItem newVar = (VariableSymbolTableItem) SymbolTable.top.getItem(VariableSymbolTableItem.START_KEY + variableDec.getVarName().getName());
+                newVar.setType(defaultType);
+            } catch (ItemNotFoundException ignored) {}
+        }
 
         if (inSetGet) {
             CannotUseDefineVar exception;
@@ -189,9 +193,9 @@ public class TypeChecker extends Visitor<Boolean> {
 
     @Override
     public Boolean visit(BlockStmt blockStmt) {
-        Boolean hasRet = true;
+        Boolean hasRet = false;
         for (Statement stmt: blockStmt.getStatements())
-            hasRet = hasRet & stmt.accept(this);
+            hasRet = hasRet | stmt.accept(this);
         return hasRet;
     }
 
@@ -239,6 +243,10 @@ public class TypeChecker extends Visitor<Boolean> {
         retLine = returnStmt.getLine();
         if (returnStmt.getReturnedExpr() != null) {
             Type returnType = returnStmt.getReturnedExpr().accept(expressionTypeChecker);
+            if (returnType instanceof VoidType) {
+                CantUseValueOfVoidFunction exception = new CantUseValueOfVoidFunction(returnStmt.getLine());
+                returnStmt.addError(exception);
+            }
             if (curFunction != null) {
                 if (!expressionTypeChecker.haveSameType(curFunction.getReturnType(), returnType)) {
                     ReturnValueNotMatchFunctionReturnType exception;
