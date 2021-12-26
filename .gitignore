@@ -5,3 +5,4 @@ Phase2/src/parsers
 antlr-4.9.2-complete.jar
 out/
 gen/
+*.zip

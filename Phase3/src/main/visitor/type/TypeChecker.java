@@ -9,7 +9,7 @@ import main.ast.nodes.statement.*;
 import main.ast.types.*;
 import main.ast.types.primitives.BoolType;
 import main.ast.types.primitives.VoidType;
-import main.compileError.CompileError;
+import main.compileError.*;
 import main.compileError.typeError.*;
 import main.symbolTable.*;
 import main.symbolTable.exceptions.*;
@@ -23,7 +23,8 @@ public class TypeChecker extends Visitor<Boolean> {
 
     private Integer retLine = -1;
     private Boolean inSetGet = false;
-    private FunctionDeclaration curFunction = null;
+    private Boolean inGet = false;
+    private Type curScopeReturnType = null;
 
     public TypeChecker(){
         this.expressionTypeChecker = new ExpressionTypeChecker();
@@ -62,7 +63,6 @@ public class TypeChecker extends Visitor<Boolean> {
 
     @Override
     public Boolean visit(FunctionDeclaration functionDec) {
-        curFunction = functionDec;
         for (VariableDeclaration var: functionDec.getArgs()) {
             var.accept(this);
         }
@@ -76,7 +76,9 @@ public class TypeChecker extends Visitor<Boolean> {
             expressionTypeChecker.addChildNodeErrors(functionDec, structRet);
         }
 
+        curScopeReturnType = functionDec.getReturnType();
         Boolean hasRet = functionDec.getBody().accept(this);
+        curScopeReturnType = null;
 
         if (!(functionDec.getReturnType() instanceof VoidType) && !hasRet) {
             MissingReturnStatement exception;
@@ -89,7 +91,6 @@ public class TypeChecker extends Visitor<Boolean> {
 
     @Override
     public Boolean visit(MainDeclaration mainDec) {
-        curFunction = null;
         retLine = -1;
         mainDec.getBody().accept(this);
         if (retLine >= 0) {
@@ -146,13 +147,16 @@ public class TypeChecker extends Visitor<Boolean> {
 
     @Override
     public Boolean visit(SetGetVarDeclaration setGetVarDec) {
-        inSetGet = true;
         retLine = -1;
+
         try {
             SymbolTable symbolTable = ((FunctionSymbolTableItem) SymbolTable.top.getItem(FunctionSymbolTableItem.START_KEY + setGetVarDec.getVarName().getName())).getFunctionSymbolTable();
             SymbolTable.push(symbolTable);
         } catch (ItemNotFoundException ignored) {}
+        for (VariableDeclaration arg : setGetVarDec.getArgs())
+            arg.accept(this);
 
+        inSetGet = true;
         setGetVarDec.getSetterBody().accept(this);
         if (retLine >= 0) {
             CannotUseReturn exception;
@@ -162,10 +166,13 @@ public class TypeChecker extends Visitor<Boolean> {
 
         SymbolTable.pop();
 
+        curScopeReturnType = setGetVarDec.getVarType();
         Boolean hasReturn = setGetVarDec.getGetterBody().accept(this);
+        curScopeReturnType = null;
+
         if(!hasReturn) {
             MissingReturnStatement exception;
-            exception = new MissingReturnStatement(setGetVarDec.getLine(), setGetVarDec.getVarName().getName());
+            exception = new MissingReturnStatement(setGetVarDec.getGetterBody().getLine(), setGetVarDec.getVarName().getName());
             setGetVarDec.addError(exception);
         }
 
@@ -217,7 +224,8 @@ public class TypeChecker extends Visitor<Boolean> {
             SymbolTable.push(_else);
             hasRet = hasRet & conditionalStmt.getElseBody().accept(this);
             SymbolTable.pop();
-        }
+        } else
+            hasRet = false;
         return hasRet;
     }
 
@@ -247,8 +255,8 @@ public class TypeChecker extends Visitor<Boolean> {
                 CantUseValueOfVoidFunction exception = new CantUseValueOfVoidFunction(returnStmt.getLine());
                 returnStmt.addError(exception);
             }
-            if (curFunction != null) {
-                if (!expressionTypeChecker.haveSameType(curFunction.getReturnType(), returnType)) {
+            if (curScopeReturnType != null) {
+                if (!expressionTypeChecker.haveSameType(curScopeReturnType, returnType)) {
                     ReturnValueNotMatchFunctionReturnType exception;
                     exception = new ReturnValueNotMatchFunctionReturnType(returnStmt.getLine());
                     returnStmt.addError(exception);

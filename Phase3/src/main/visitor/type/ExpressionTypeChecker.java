@@ -40,6 +40,10 @@ public class ExpressionTypeChecker extends Visitor<Type> {
     public Boolean haveSameType(Type leftType, Type rightType) {
         if(leftType instanceof NoType || rightType instanceof NoType)
             return true;
+        if(leftType instanceof ListType && rightType instanceof ListType)
+            return haveSameType(((ListType) leftType).getType(), ((ListType) rightType).getType());
+        if(leftType instanceof StructType leftStructType && rightType instanceof StructType rightStructType)
+            return leftStructType.getStructName().getName().equals(rightStructType.getStructName().getName());
         if(leftType instanceof IntType  && rightType instanceof IntType)
             return true;
         if(leftType instanceof BoolType && rightType instanceof BoolType)

@@ -1,33 +1,29 @@
 struct A begin
     int num
-    list #int idx
-    bool find (int arg) begin
+    list #int idx(int c)begin
         set begin
-            int newArg = arg & var
-            find = arg
-            return find
+            int _a = 1
+            num = 5* 5+ 5 / 5 - c
         end
         get begin
-            return arg
+            if (num < 5 * 5 / num)
+                return false;
         end
     end
 end
 
-
-struct B function(int arg1, bool arg2) begin
-    if arg1 > arg2 == arg1
-        return arg1
-    else
-        return 2
+struct B begin
+    int num
 end
 
-void f2()
+int f2(struct A a)
     return 3
 
 
 main() begin
-    struct A a;
-    a.i = 3
-    display(f2(1))
-    function(i, 2)
+    struct A a
+    struct B b
+    f2(b)
+    a = b;
+    bool c = a == b
 end
