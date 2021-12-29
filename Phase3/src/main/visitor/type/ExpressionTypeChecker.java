@@ -20,7 +20,7 @@ import java.util.ArrayList;
 
 public class ExpressionTypeChecker extends Visitor<Type> {
 
-    private Boolean isFunctioncallStmt = false;
+    public Boolean isFunctioncallStmt = false;
     private Boolean isStructDec = false;
 
     public void addChildNodeErrors(Node parentNode, Node childNode) {
@@ -130,6 +130,7 @@ public class ExpressionTypeChecker extends Visitor<Type> {
                 binaryExpression.addError(exception);
                 return new NoType();
             }
+            return rightType;
         }
 
         else { // mult, add, sub, div
@@ -279,13 +280,14 @@ public class ExpressionTypeChecker extends Visitor<Type> {
         if(!(indexType instanceof IntType) && !(indexType instanceof NoType)) {
             ListIndexNotInt exception = new ListIndexNotInt(listAccessByIndex.getLine());
             listAccessByIndex.addError(exception);
+            return new NoType();
         }
         addChildNodeErrors(listAccessByIndex, listAccessByIndex.getInstance());
         addChildNodeErrors(listAccessByIndex, listAccessByIndex.getIndex());
 
+        if (indexType instanceof NoType) return new NoType();
         if(listType instanceof ListType) {
-            if (haveSameType( ((ListType) listType).getType(), indexType))
-                return new IntType();
+            return ((ListType) listType).getType();
         }
         else if(!(listType instanceof NoType)) {
             AccessByIndexOnNonList exception = new AccessByIndexOnNonList(listAccessByIndex.getLine());

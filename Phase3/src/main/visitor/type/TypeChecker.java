@@ -1,5 +1,6 @@
 package main.visitor.type;
 
+import main.ast.nodes.Node;
 import main.ast.nodes.Program;
 import main.ast.nodes.declaration.*;
 import main.ast.nodes.declaration.struct.*;
@@ -231,7 +232,9 @@ public class TypeChecker extends Visitor<Boolean> {
 
     @Override
     public Boolean visit(FunctionCallStmt functionCallStmt) {
+        expressionTypeChecker.isFunctioncallStmt = true;
         functionCallStmt.getFunctionCall().accept(expressionTypeChecker);
+        expressionTypeChecker.isFunctioncallStmt = false;
         return false;
     }
 
@@ -278,14 +281,15 @@ public class TypeChecker extends Visitor<Boolean> {
         SymbolTable.push(loop);
         Boolean hasRet = loopStmt.getBody().accept(this);
         SymbolTable.pop();
-        return hasRet;
+        return false;
     }
 
     @Override
     public Boolean visit(VarDecStmt varDecStmt) {
-        for (VariableDeclaration varDec : varDecStmt.getVars()) {
-            varDec.accept(this);
-        }
+        varDecStmt.getVars().get(0).accept(this);
+        Node.isCatchErrorsActive = false;
+        for (int i = 1; i < varDecStmt.getVars().size(); i+=1) varDecStmt.getVars().get(i).accept(this);
+        Node.isCatchErrorsActive = true;
         return false;
     }
 
