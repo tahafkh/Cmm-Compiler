@@ -12,6 +12,8 @@ import main.ast.types.*;
 import main.ast.types.primitives.*;
 import main.symbolTable.*;
 import main.symbolTable.exceptions.*;
+import main.symbolTable.items.StructSymbolTableItem;
+import main.symbolTable.items.VariableSymbolTableItem;
 import main.visitor.Visitor;
 import main.visitor.type.ExpressionTypeChecker;
 import java.io.*;
@@ -21,7 +23,8 @@ public class  CodeGenerator extends Visitor<String> {
     ExpressionTypeChecker expressionTypeChecker = new ExpressionTypeChecker();
     private String outputPath;
     private FileWriter currentFile;
-    private boolean inMain = false;
+    StructDeclaration currStruct = null;
+    private boolean inDefaultConst = false;
     private int numOfUsedLabel = 0;
 
     private String getFreshLabel() {
@@ -126,6 +129,20 @@ public class  CodeGenerator extends Visitor<String> {
         return cnt;
     }
 
+    private void addDefaultConstructor(String structName) {
+        inDefaultConst = true;
+        addCommand(".method public <init>()V");
+        addCommand(".limit stack 128");
+        addCommand(".limit locals 128");
+        addCommand("aload 0");
+
+        currStruct.getBody().accept(this);
+
+        addCommand("return");
+        addCommand(".end method");
+        inDefaultConst = false;
+    }
+
     @Override
     public String visit(Program program) {
         prepareOutputFolder();
@@ -146,80 +163,156 @@ public class  CodeGenerator extends Visitor<String> {
 
     @Override
     public String visit(StructDeclaration structDeclaration) {
-        createFile(structDeclaration.getStructName().getName());
+        String structName = structDeclaration.getStructName().getName();
+        createFile(structName);
+        currStruct = structDeclaration;
         //todo
+
+        addCommand(".class " + structName);
+        addCommand(".super java/lang/Object");
+
+        structDeclaration.getBody().accept(this);
+
+        addDefaultConstructor();
+        currStruct = null;
+
         return null;
     }
 
     @Override
     public String visit(FunctionDeclaration functionDeclaration) {
-//        String funcName = funcDeclaration.getFunctionName().getName();
-//
-//        String command = "";
-//        command += ".method public " + funcName;
-//
-//        FunctionSymbolTableItem fsti = getFuncSymbolTableItem("Function_" + funcName);
-//        expressionTypeChecker.setCurFunction(fsti);
-//
-//        Map<String, Type> argTypeMap = fsti.getArgTypes();
-//        Type returnType = fsti.getReturnType();
-//        ArrayList<Type> argTypes = new ArrayList<>();
-//        for (Identifier identifier: funcDeclaration.getArgs()) {
-//            String argName = identifier.getName();
-//            Type t = argTypeMap.get(argName);
-//            argTypes.add(t);
-//        }
-//
-//        StringBuilder argList = new StringBuilder("(");
-//        for (Type t : argTypes) {
-//            argList.append(getArgTypeSymbol(t));
-//        }
-//        argList.append(")");
-//        argList.append(getArgTypeSymbol(returnType));
-//        command += argList.toString() + "\n";
-//
-//        command += ".limit stack 140\n";
-//        command += ".limit locals 140\n";
-//
-//        command += funcDeclaration.getBody().accept(this);
-//        command += ".end method\n";
-//        return command;
+        //todo
+
+        String header = "";
+        String className = currentClass.getClassName().getName();
+        if (methodDeclaration instanceof ConstructorDeclaration){
+            header += ".method public <init>(";
+            for(VarDeclaration arg : methodDeclaration.getArgs()){
+                header += "L" + makeTypeSignature(arg.getType()) + ";";
+            }
+            header += ")V";
+        }
+        else{
+            header += ".method public " + methodDeclaration.getMethodName().getName() + "(";
+            for(VarDeclaration arg : methodDeclaration.getArgs()){
+                header += "L" + makeTypeSignature(arg.getType()) + ";";
+            }
+            if (methodDeclaration.getReturnType() instanceof NullType)
+                header += ")V";
+            else
+                header += ")L"  + makeTypeSignature(methodDeclaration.getReturnType()) + ";";
+        }
+
+        addCommand(header);
+        addCommand(".limit stack 128");
+        addCommand(".limit locals 128");
+
+        if(methodDeclaration instanceof ConstructorDeclaration) {
+
+            if (currentClass.getParentClassName() == null){
+                addCommand("aload 0");
+                addCommand("invokespecial java/lang/Object/<init>()V");
+            }
+            else{
+                String parentClassName = currentClass.getParentClassName().getName();
+                addCommand("aload 0");
+                addCommand("invokespecial " + parentClassName + "/<init>()V");
+            }
+
+            for(FieldDeclaration field : currentClass.getFields()){
+                String fieldName = field.getVarDeclaration().getVarName().getName();
+                Type fieldType = field.getVarDeclaration().getType();
+
+                if(fieldType instanceof ClassType || fieldType instanceof FptrType){
+                    addCommand("aload 0");
+                    addCommand("aconst_null");
+                    addCommand("putfield " + className + "/" + fieldName + " L" + makeTypeSignature(fieldType) + ";\n");
+                }
+                else if(fieldType instanceof IntType || fieldType instanceof BoolType){
+                    addCommand("aload 0");
+                    addCommand("ldc 0");
+                    if(fieldType instanceof IntType)
+                        addCommand("invokestatic java/lang/Integer/valueOf(I)Ljava/lang/Integer;");
+                    if(fieldType instanceof BoolType)
+                        addCommand("invokestatic java/lang/Boolean/valueOf(Z)Ljava/lang/Boolean;");
+                    addCommand("putfield " + className + "/" + fieldName + " L" + makeTypeSignature(fieldType) + ";\n");
+                }
+                else if(fieldType instanceof StringType){
+                    addCommand("aload 0");
+                    addCommand("ldc \"\"");
+                    addCommand("putfield " + className + "/" + fieldName + " L" + makeTypeSignature(fieldType) + ";\n");
+                }
+                else{
+                    addCommand("aload 0");
+                    initializeList((ListType) fieldType);
+                    addCommand("putfield " + className + "/" + fieldName + " L" + makeTypeSignature(fieldType) + ";\n");
+                }
+            }
+
+        }
+
+        for(VarDeclaration var : methodDeclaration.getLocalVars()){
+            var.accept(this);
+        }
+
+        for(Statement stmt : methodDeclaration.getBody()){
+            stmt.accept(this);
+        }
+        if(!methodDeclaration.getDoesReturn())
+            addCommand("return");
+
+        addCommand(".end method");
+
+        numOfUsedTemp = 0;
         return null;
     }
 
     @Override
     public String visit(MainDeclaration mainDeclaration) {
-        inMain = true;
-
+        //todo
         addStaticMainMethod();
 
         mainDeclaration.getBody().accept(this);
 
-        inMain = false;
         return null;
     }
 
     @Override
     public String visit(VariableDeclaration variableDeclaration) {
-        int slot = slotOf(variableDeclaration.getVarName().getName()); //todo
+        String varName = variableDeclaration.getVarName().getName();
+        int slot = slotOf(varName); //todo
         Type type = variableDeclaration.getVarType();
 
         if (variableDeclaration.getDefaultValue() != null) {
             addCommand(variableDeclaration.getDefaultValue().accept(this));
         }
         else {
-            if(type instanceof FptrType){
-                addCommand("aconst_null");
+            String initCommands = "";
+            String commands = "";
+            if (type instanceof FptrType) {
+                initCommands += "aconst_null\n";
+            } else if (type instanceof StructType) {
+                initCommands += "new " + ((StructType) type).getStructName().getName() + "\n" +
+                        "dup\n" +
+                        "invokespecial " + ((StructType) type).getStructName().getName() + "/<init>()V\n";
+            } else if (type instanceof IntType || type instanceof BoolType) {
+                initCommands += "ldc 0\n";
+            } else {
+                initCommands += "new List\n" +
+                        "dup\n" +
+                        "new java/util/ArrayList\n" +
+                        "dup\n" +
+                        "invokespecial java/util/ArrayList/<init>()V\n" +
+                        "invokespecial List/<init>(Ljava/util/ArrayList;)V\n";
             }
-            else if(type instanceof StructType){
-//            initializeStruct((StructType) type);
+            if (inDefaultConst) {
+                commands += "aload 0\n" + initCommands + "putfield " +
+                        currStruct.getStructName().getName() + "/" + varName + " L" + getJasminType(type) + ";\n";
             }
-            else if(type instanceof IntType || type instanceof BoolType){
-                addCommand("ldc 0");
+            else {
+                commands = initCommands;
             }
-            else{
-//            initializeList((ListType) type);
-            }
+            addCommand(commands);
         }
 
         if(type instanceof IntType)
@@ -428,7 +521,9 @@ public class  CodeGenerator extends Visitor<String> {
             Type rightType = binaryExpression.getSecondOperand().accept(expressionTypeChecker);
             String rightOperandCommands = binaryExpression.getSecondOperand().accept(this);
             if (leftType instanceof ListType) {
-                rightOperandCommands = "new List\ndup\n" + rightOperandCommands + "invokespecial List/<init>(LList;)V\n";
+                rightOperandCommands = "new List\n" +
+                                        "dup\n" +
+                                        rightOperandCommands + "invokespecial List/<init>(LList;)V\n";
             }
 
             if (rightType instanceof IntType) {
@@ -459,7 +554,7 @@ public class  CodeGenerator extends Visitor<String> {
                 commands += instance.accept(this);
                 commands += index.accept(this);
                 commands += "invokevirtual List/getElement(I)Ljava/lang/Object;\n";
-//                commands += "checkcast " + makeTypeSignature(rightType) + "\n";
+                commands += "checkcast " + getJasminType(rightType) + "\n";
                 if (rightType instanceof IntType)
                     commands += "invokevirtual java/lang/Integer/intValue()I\n";
                 if (rightType instanceof BoolType)
@@ -497,8 +592,29 @@ public class  CodeGenerator extends Visitor<String> {
     @Override
     public String visit(StructAccess structAccess){
         //todo
+        Type elementType = structAccess.accept(expressionTypeChecker);
+        String elementName = structAccess.getElement().getName();
 
-        return null;
+        Type instanceType = structAccess.getInstance().accept(expressionTypeChecker);
+
+        String commands = "";
+        String structName = ((StructType) instanceType).getStructName().getName();
+
+        try {
+            SymbolTable structSymbolTable = ((StructSymbolTableItem) SymbolTable.root.getItem(StructSymbolTableItem.START_KEY + structName)).getStructSymbolTable();
+            try {
+                structSymbolTable.getItem(VariableSymbolTableItem.START_KEY + elementName);
+                commands += structAccess.getInstance().accept(this);
+                commands += "getfield " + structName + "/" + elementName + " L" + getJasminType(elementType) + ";\n";
+                if (elementType instanceof IntType)
+                    commands += "invokevirtual java/lang/Integer/intValue()I\n";
+                if (elementType instanceof BoolType)
+                    commands += "invokevirtual java/lang/Boolean/booleanValue()Z\n";
+
+            } catch (ItemNotFoundException ignored) {}
+        } catch (ItemNotFoundException ignored) {}
+
+        return commands;
     }
 
     @Override
@@ -533,7 +649,53 @@ public class  CodeGenerator extends Visitor<String> {
     @Override
     public String visit(FunctionCall functionCall){
         //todo
-        return null;
+        int tempIndex = slotOf("");
+
+        String commands = functionCall.getInstance().accept(this);
+        commands += "new java/util/ArrayList\n";
+        commands += "dup\n";
+        commands += "invokespecial java/util/ArrayList/<init>()V\n";
+        commands += "astore " + tempIndex + "\n";
+
+        for(Expression arg : functionCall.getArgs()){
+            commands += "aload " + tempIndex + "\n";
+
+            Type argType = arg.accept(expressionTypeChecker);
+
+            if(argType instanceof ListType) {
+                commands += "new List\n";
+                commands += "dup\n";
+            }
+
+            commands += arg.accept(this);
+
+            if(argType instanceof IntType)
+                commands += "invokestatic java/lang/Integer/valueOf(I)Ljava/lang/Integer;\n";
+
+            if(argType instanceof BoolType)
+                commands += "invokestatic java/lang/Boolean/valueOf(Z)Ljava/lang/Boolean;\n";
+
+            if(argType instanceof ListType) {
+                commands += "invokespecial List/<init>(LList;)V\n";
+            }
+
+            commands += "invokevirtual java/util/ArrayList/add(Ljava/lang/Object;)Z\n";
+            commands += "pop\n";
+        }
+
+        commands += "aload " + tempIndex + "\n";
+        commands += "invokevirtual Fptr/invoke(Ljava/util/ArrayList;)Ljava/lang/Object;\n";
+
+        Type retType = ((FptrType) functionCall.getInstance().accept(expressionTypeChecker)).getReturnType();
+
+        if(!(retType instanceof VoidType))
+            commands += "checkcast " + getJasminType(retType) + "\n";
+
+        if (retType instanceof IntType)
+            commands += "invokevirtual java/lang/Integer/intValue()I\n";
+        if (retType instanceof BoolType)
+            commands += "invokevirtual java/lang/Boolean/booleanValue()Z\n";
+        return commands;
     }
 
     @Override
