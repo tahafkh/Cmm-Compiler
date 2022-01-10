@@ -146,6 +146,8 @@ public class  CodeGenerator extends Visitor<String> {
         addCommand(".limit stack 128");
         addCommand(".limit locals 128");
         addCommand("aload 0");
+//        addCommand("dup");
+        addCommand("invokespecial java/lang/Object/<init>()V");
 
         currStruct.getBody().accept(this);
 
@@ -302,6 +304,11 @@ public class  CodeGenerator extends Visitor<String> {
 
         String commands = setDefaultValue(type);
         if (inDefaultConst) {
+            if(type instanceof IntType)
+                commands += "invokestatic java/lang/Integer/valueOf(I)Ljava/lang/Integer;\n";
+            if(type instanceof BoolType)
+                commands += "invokestatic java/lang/Boolean/valueOf(Z)Ljava/lang/Boolean;\n";
+
             commands = "aload 0\n" + commands + "putfield " +
                     currStruct.getStructName().getName() + "/" + varName + " L" + getJasminType(type) + ";\n";
             addCommand(commands);
@@ -571,10 +578,18 @@ public class  CodeGenerator extends Visitor<String> {
             } else if (binaryExpression.getFirstOperand() instanceof StructAccess) {
                 Expression instance = ((StructAccess) binaryExpression.getFirstOperand()).getInstance();
                 Type instanceType = instance.accept(expressionTypeChecker);
+
+                String structName = ((StructType) instanceType).getStructName().getName();
+                try {
+                    SymbolTable.push(
+                            ((StructSymbolTableItem)(SymbolTable.root.getItem(StructSymbolTableItem.START_KEY+structName))
+                            ).getStructSymbolTable());
+                } catch (ItemNotFoundException ignored) {}
+
                 String elementName = ((StructAccess) binaryExpression.getFirstOperand()).getElement().getName();
                 Type elementType = ((StructAccess) binaryExpression.getFirstOperand()).getElement().accept(expressionTypeChecker);
 
-                String structName = ((StructType) instanceType).getStructName().getName();
+                SymbolTable.pop();
 
                 commands += instance.accept(this);
                 commands += rightOperandCommands;
@@ -722,7 +737,7 @@ public class  CodeGenerator extends Visitor<String> {
     public String visit(ListSize listSize){
         //todo
         String commands = listSize.getArg().accept(this);
-        commands += "invokevirtual List/getSize(Ljava/lang/Object;)V\n";
+        commands += "invokevirtual List/getSize()I\n";
         return commands;
     }
 
