@@ -261,7 +261,7 @@ public class  CodeGenerator extends Visitor<String> {
         addCommand(".limit locals 128");
 
         functionDeclaration.getBody().accept(this);
-
+        addCommand("return");
         addCommand(".end method");
 
         SymbolTable.pop();
